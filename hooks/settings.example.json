@@ -1,0 +1,94 @@
+{
+  "_comment": [
+    "EXAMPLE ONLY - this file is not read by Claude Code and is not installed",
+    "automatically. Copy the pieces you want into .claude/settings.json in the",
+    "repository you are analysing, or into ~/.claude/settings.json, and replace",
+    "/ABSOLUTE/PATH/TO/contributor-scout with the real checkout path.",
+    "Read hooks/README.md before enabling the hook - it blocks git commit,",
+    "git push, gh write commands, and writes outside contribution-discovery/,",
+    "which will interfere with ordinary development work in the same session."
+  ],
+
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git diff:*)",
+      "Bash(git shortlog:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch --contains:*)",
+      "Bash(git branch -r:*)",
+      "Bash(git tag --contains:*)",
+      "Bash(git tag --list:*)",
+      "Bash(gh auth status)",
+      "Bash(gh repo view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh search:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(python3 skills/contributor-scout/scripts/:*)"
+    ],
+    "ask": [
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(npm ci:*)",
+      "Bash(yarn install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(cargo install:*)",
+      "Bash(go install:*)",
+      "Bash(brew install:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(make install:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)"
+    ],
+    "deny": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh release create:*)",
+      "Bash(gh repo fork:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /ABSOLUTE/PATH/TO/contributor-scout/hooks/discovery_guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
