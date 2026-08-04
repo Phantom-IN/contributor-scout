@@ -1,0 +1,21 @@
+# Contributor Scout discovery output (generated per analysed repository)
+contribution-discovery/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local Claude Code overrides
+.claude/settings.local.json
