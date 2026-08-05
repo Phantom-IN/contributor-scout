@@ -9,18 +9,19 @@ than relying on prompt compliance alone.
 
 ## What it enforces
 
-[`discovery_guard.py`](discovery_guard.py) is a Claude Code `PreToolUse` hook.
-It reads the tool-call payload on stdin and denies:
+[`discovery_guard.py`](discovery_guard.py) is a `PreToolUse` hook, usable with
+both Claude Code and GitHub Copilot. It reads the tool-call payload on stdin
+(either host's shape) and denies:
 
 | Category | Examples |
 |---|---|
-| Writes outside the output directory | `Write`, `Edit`, `NotebookEdit` to any path not under `contribution-discovery/` |
+| Writes outside the output directory | `Write`/`Edit`/`NotebookEdit` (or Copilot's file-edit tools) to any path not under `contribution-discovery/` |
 | Git state mutation | `git commit`, `git push`, `git reset --hard`, `git clean -fd`, `git checkout`, `git rebase`, `git merge`, `git stash`, `git add`, branch/tag creation |
 | GitHub writes | `gh issue create/comment/close`, `gh pr create/comment/merge/review`, `gh release create`, `gh repo fork/edit`, `gh api` with `POST`/`PUT`/`PATCH`/`DELETE` or a request body |
 | Destructive shell | `rm -rf`, `mkfs`, `dd of=`, writes to block devices, `chmod 777`, `curl … \| sh` |
 | Shell redirection | `>` or `>>` to a path outside `contribution-discovery/` |
 
-Everything else falls through to Claude Code's normal permission handling.
+Everything else falls through to the host tool's normal permission handling.
 
 ## Trade-off before you enable it
 
@@ -29,11 +30,11 @@ Scout's. If you enable it in your user settings, ordinary development in any
 project will be blocked from committing, pushing, and editing files. That is
 usually not what you want.
 
-**Recommended:** enable it in the *analysed repository's* `.claude/settings.json`
-for the duration of the discovery run, then remove it. Or start a session
-dedicated to discovery.
+**Recommended:** enable it in the *analysed repository's* settings for the
+duration of the discovery run, then remove it. Or start a session dedicated to
+discovery.
 
-## Installing it
+## Installing it - Claude Code
 
 1. Note the absolute path to your Contributor Scout checkout.
 2. Open (or create) `.claude/settings.json` in the repository you are analysing.
@@ -44,6 +45,21 @@ dedicated to discovery.
    and denies the write commands outright. The permission rules and the hook are
    independent; either works alone, and together they overlap deliberately.
 5. Restart Claude Code, or run `/hooks` to confirm registration.
+
+## Installing it - GitHub Copilot
+
+1. Note the absolute path to your Contributor Scout checkout.
+2. Create `.github/hooks/discovery-guard.json` in the repository you are
+   analysing.
+3. Copy the contents of
+   [`copilot-hooks.example.json`](copilot-hooks.example.json), replacing
+   `/ABSOLUTE/PATH/TO/contributor-scout` with the real path.
+4. Reload the window, or check the Copilot hooks output for confirmation of
+   registration.
+
+> Do not place a real (non-placeholder) copy of this file at `.github/hooks/`
+> inside the **contributor-scout checkout itself** - Copilot auto-loads any
+> `*.json` file it finds there for that workspace.
 
 Verify it is working:
 
@@ -67,15 +83,15 @@ echo '{"tool_name":"Bash","tool_input":{"command":"git log --oneline -5"},"cwd":
 
 ## Removing it
 
-Delete the `hooks` block you added and restart Claude Code. The hook keeps no
-state and writes nothing.
+Delete the `hooks` block (or the `.github/hooks/discovery-guard.json` file) you
+added and restart/reload. The hook keeps no state and writes nothing.
 
 ## Limitations - read these
 
 - **It is defence in depth, not a sandbox.** The Bash rules inspect command text.
   A sufficiently creative command string (unusual quoting, indirection through a
   variable, a wrapper script) can evade it. It complements the skill's
-  instructions and Claude Code's permission rules; it does not replace either.
+  instructions and the host tool's permission rules; it does not replace either.
 - **It fails open.** A malformed payload is allowed through rather than wedging
   the session. A safety net that breaks your session gets disabled, and a
   disabled safety net protects nothing.
@@ -88,4 +104,6 @@ state and writes nothing.
 ## Related
 
 - [`docs/safety-model.md`](../docs/safety-model.md) - the full permission model
-- [`skills/contributor-scout/SKILL.md`](../skills/contributor-scout/SKILL.md) §2 - the hard constraints this hook mirrors
+- [`skills/contributor-scout/SKILL.md`](../skills/contributor-scout/SKILL.md) §2
+  and [`.github/skills/contributor-scout/SKILL.md`](../.github/skills/contributor-scout/SKILL.md) §2
+  - the hard constraints this hook mirrors
