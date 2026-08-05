@@ -15,8 +15,8 @@ Safety comes from three independent layers, because any one of them can fail.
 | Layer | Mechanism | Fails when |
 |---|---|---|
 | 1. Instruction | `SKILL.md` §2 hard constraints, repeated in every agent definition | The model does something unexpected |
-| 2. Permission | Claude Code allow/ask/deny rules in `settings.json` | A command's shape is not covered by a rule |
-| 3. Hook | The optional [`discovery_guard.py`](../hooks/discovery_guard.py) `PreToolUse` hook | A creatively-shaped command evades textual inspection |
+| 2. Permission | Claude Code allow/ask/deny rules in `settings.json`, or Copilot's own tool-confirmation prompts | A command's shape is not covered by a rule |
+| 3. Hook | The optional [`discovery_guard.py`](../hooks/discovery_guard.py) `PreToolUse` hook (Claude `settings.json` or Copilot `.github/hooks/*.json`) | A creatively-shaped command evades textual inspection |
 
 Layers 2 and 3 overlap deliberately. Neither is a sandbox; together with layer 1
 they make the discovery-only property hard to violate by accident.
@@ -152,8 +152,9 @@ for installation, verification, removal, and its limitations.
 
 Important trade-off: the hook applies to every tool call in the session, not just
 Contributor Scout's. Enable it in the *analysed repository's*
-`.claude/settings.json` for the run, or use a session dedicated to discovery -
-enabling it in your user settings will block ordinary development everywhere.
+`.claude/settings.json` (Claude Code) or `.github/hooks/*.json` (GitHub Copilot)
+for the run, or use a session dedicated to discovery - enabling it at user
+scope will block ordinary development everywhere.
 
 ---
 
