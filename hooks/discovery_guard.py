@@ -3,17 +3,20 @@
 
 This hook is NOT installed automatically. Nothing in this project registers it.
 To use it, follow hooks/README.md and add it to your own settings file
-deliberately.
+(Claude Code `settings.json`) or hooks config (GitHub Copilot
+`.github/hooks/*.json`) deliberately.
 
 What it does
 ------------
-Reads a Claude Code PreToolUse hook payload on stdin and denies:
+Reads a PreToolUse hook payload on stdin - either Claude Code's or GitHub
+Copilot's shape, both are accepted - and denies:
 
   * Write / Edit / NotebookEdit to any path outside `contribution-discovery/`
-  * Bash commands that mutate Git state (commit, push, reset --hard, clean -fd,
-    checkout, branch creation, tag creation, rebase, merge, stash)
-  * Bash commands that write to GitHub (`gh issue create`, `gh pr create`,
-    `gh * comment`, `gh api` with a mutating method, `gh release create`, ...)
+  * Bash/terminal commands that mutate Git state (commit, push, reset --hard,
+    clean -fd, checkout, branch creation, tag creation, rebase, merge, stash)
+  * Bash/terminal commands that write to GitHub (`gh issue create`,
+    `gh pr create`, `gh * comment`, `gh api` with a mutating method,
+    `gh release create`, ...)
   * Obviously destructive shell commands (`rm -rf`, `mkfs`, `dd of=`, ...)
 
 Everything else is allowed to fall through to normal permission handling.
@@ -28,7 +31,8 @@ Limitations
 -----------
 This is a defence-in-depth measure using textual command inspection. A
 sufficiently creative command string can evade it. It complements the skill's
-instructions and Claude Code's permission rules; it does not replace them.
+instructions and the host tool's own permission rules; it does not replace
+them.
 """
 
 from __future__ import annotations
@@ -107,8 +111,34 @@ def decision(action: str, reason: str) -> Dict[str, Any]:
     }
 
 
+def _field(payload: Dict[str, Any], *keys: str) -> Any:
+    """Return the first present value across Claude Code / Copilot key spellings."""
+    for key in keys:
+        if key in payload and payload[key] not in (None, ""):
+            return payload[key]
+    return None
+
+
+def _is_write_tool(name: Optional[str]) -> bool:
+    if not name:
+        return False
+    if name in WRITE_TOOLS:
+        return True
+    lowered = name.lower()
+    return any(token in lowered for token in ("write", "edit", "create_file"))
+
+
+def _is_exec_tool(name: Optional[str]) -> bool:
+    if not name:
+        return False
+    if name == "Bash":
+        return True
+    lowered = name.lower()
+    return any(token in lowered for token in ("bash", "terminal", "shell", "execute", "run_in"))
+
+
 def project_dir(payload: Dict[str, Any]) -> Path:
-    raw = (payload.get("cwd")
+    raw = (_field(payload, "cwd", "workingDirectory", "workspaceFolder")
            or os.environ.get("CLAUDE_PROJECT_DIR")
            or os.getcwd())
     return Path(raw).resolve()
@@ -128,7 +158,8 @@ def is_inside_allowed_root(target: str, root: Path) -> bool:
 
 
 def check_write(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
-    target = (payload.get("tool_input") or {}).get("file_path")
+    tool_input = _field(payload, "tool_input", "toolInput", "input", "parameters") or {}
+    target = _field(tool_input, "file_path", "filePath", "path")
     if not target:
         return None
     if is_inside_allowed_root(target, root):
@@ -142,7 +173,8 @@ def check_write(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]
 
 
 def check_bash(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
-    command = (payload.get("tool_input") or {}).get("command") or ""
+    tool_input = _field(payload, "tool_input", "toolInput", "input", "parameters") or {}
+    command = _field(tool_input, "command", "cmd") or ""
     if not command:
         return None
 
@@ -177,13 +209,13 @@ def main() -> int:
     if not isinstance(payload, dict):
         return 0
 
-    tool = payload.get("tool_name")
+    tool = _field(payload, "tool_name", "toolName", "tool")
     root = project_dir(payload)
 
     result: Optional[Dict[str, Any]] = None
-    if tool in WRITE_TOOLS:
+    if _is_write_tool(tool):
         result = check_write(payload, root)
-    elif tool == "Bash":
+    elif _is_exec_tool(tool):
         result = check_bash(payload, root)
 
     if result is not None:
