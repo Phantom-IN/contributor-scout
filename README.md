@@ -1,6 +1,7 @@
 # Contributor Scout
 
-**Evidence-first open-source contribution discovery for Claude Code.**
+**Evidence-first open-source contribution discovery for Claude Code and GitHub
+Copilot.**
 
 Point Contributor Scout at a cloned open-source repository and it will tell you
 what is worth contributing — with source evidence, historical context, proof
@@ -186,7 +187,7 @@ them before anything reaches the recommendation. Details in
 
 | Requirement | Needed for | Notes |
 |---|---|---|
-| Claude Code | Everything | Any recent version |
+| Claude Code **or** GitHub Copilot in VS Code | Everything | Any recent version of either |
 | Python 3.8+ | The five helper scripts | Standard library only — nothing to `pip install` |
 | `git` | History tracing, repository metadata | Already required to clone the target |
 | `gh` (GitHub CLI) | Duplicate detection against the remote | **Optional but strongly recommended** — without it, duplicate status can never be better than `UNKNOWN` |
@@ -632,15 +633,18 @@ contributor-scout/
 ├── README.md
 ├── LICENSE                          MIT
 ├── .gitignore
-├── .claude-plugin/plugin.json       plugin manifest
+├── .claude-plugin/plugin.json       Claude Code plugin manifest
 ├── AI_Assisted_Open_Source_Contribution_Discovery_Plan.md   design source of truth
-├── skills/contributor-scout/
+├── skills/contributor-scout/        Claude Code skill
 │   ├── SKILL.md                     workflow, hard constraints, modes, gates
 │   ├── references/                  12 review playbooks (loaded per phase)
 │   ├── templates/                   11 report templates
 │   └── scripts/                     5 stdlib-only Python helpers
-├── agents/                          6 specialised subagent definitions
-├── hooks/                           optional discovery-guard hook (opt-in)
+├── agents/                          6 Claude Code subagent definitions
+├── .github/                         GitHub Copilot equivalents
+│   ├── skills/contributor-scout/    same SKILL.md, references, templates, scripts
+│   └── agents/*.agent.md            6 custom-agent equivalents of agents/
+├── hooks/                           optional discovery-guard hook (opt-in, both hosts)
 ├── examples/                        worked fictional output
 └── docs/
     ├── architecture.md

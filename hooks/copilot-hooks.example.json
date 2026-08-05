@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "EXAMPLE ONLY - this file is not read from here. Copy it into",
+    "<target-repo>/.github/hooks/discovery-guard.json (the repository you are",
+    "analysing, not this one) and replace /ABSOLUTE/PATH/TO/contributor-scout",
+    "with the real path to this checkout. Read hooks/README.md first - it",
+    "blocks git commit, git push, gh write commands, and writes outside",
+    "contribution-discovery/, which will interfere with ordinary development",
+    "work in the same session.",
+    "Do NOT place this file at .github/hooks/ inside the contributor-scout",
+    "checkout itself - GitHub Copilot auto-loads any *.json file found there,",
+    "and the placeholder script path below does not exist yet."
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "python3 /ABSOLUTE/PATH/TO/contributor-scout/hooks/discovery_guard.py",
+        "timeout": 10
+      }
+    ]
+  }
+}
