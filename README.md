@@ -1,6 +1,7 @@
 # Contributor Scout
 
-**Evidence-first open-source contribution discovery for Claude Code.**
+**Evidence-first open-source contribution discovery for Claude Code and GitHub
+Copilot.**
 
 Point Contributor Scout at a cloned open-source repository and it will tell you
 what is worth contributing — with source evidence, historical context, proof
@@ -186,7 +187,7 @@ them before anything reaches the recommendation. Details in
 
 | Requirement | Needed for | Notes |
 |---|---|---|
-| Claude Code | Everything | Any recent version |
+| Claude Code **or** GitHub Copilot in VS Code | Everything | Any recent version of either |
 | Python 3.8+ | The five helper scripts | Standard library only — nothing to `pip install` |
 | `git` | History tracing, repository metadata | Already required to clone the target |
 | `gh` (GitHub CLI) | Duplicate detection against the remote | **Optional but strongly recommended** — without it, duplicate status can never be better than `UNKNOWN` |
@@ -197,7 +198,14 @@ git --version
 gh --version        # optional
 ```
 
-### Option A — personal skill (recommended)
+Pick the tab for whichever host you use — both installs are maintained side by
+side in this repository (`skills/` + `agents/` for Claude Code,
+`.github/skills/` + `.github/agents/` for GitHub Copilot) and behave the same
+way.
+
+### Claude Code
+
+#### Option A — personal skill (recommended)
 
 Available in every project on your machine.
 
@@ -220,7 +228,7 @@ ls ~/.claude/agents/ | grep -E 'security-reviewer|contribution-ranker'
 Restart Claude Code, then run `/skills` (or ask "what skills are available?") to
 confirm `contributor-scout` is listed.
 
-### Option B — project-local
+#### Option B — project-local
 
 Scoped to one repository. Useful when you want the skill checked in alongside a
 team's analysis conventions.
@@ -234,12 +242,59 @@ cp agents/*.md /path/to/target-repo/.claude/agents/
 > Do **not** do this inside a third-party repository you intend to contribute
 > to — it would add untracked files to their tree. Use Option A instead.
 
-### Option C — plugin layout
+#### Option C — plugin layout
 
 This repository is already shaped as a Claude Code plugin: `.claude-plugin/plugin.json`
 plus top-level `skills/`, `agents/`, and `hooks/`. If your Claude Code version
 supports local plugin installation, point it at this directory. Otherwise use
 Option A — it is equivalent in effect.
+
+### GitHub Copilot (VS Code)
+
+#### Option A — personal skill (recommended)
+
+Available in every workspace, via your VS Code user profile.
+
+```bash
+git clone https://github.com/your-org/contributor-scout.git
+cd contributor-scout
+
+mkdir -p ~/.copilot/skills
+cp -R .github/skills/contributor-scout ~/.copilot/skills/
+```
+
+Custom agents are not currently supported at user-profile scope with the same
+subagent-delegation behaviour as project scope, so for full functionality
+(the six specialised reviewers), prefer Option B in the target repository.
+
+Restart VS Code, then type `/` in the Copilot Chat view to confirm
+`contributor-scout` is listed, or ask "what skills are available?".
+
+#### Option B — project-local (recommended for full functionality)
+
+Scoped to one repository, including the six custom agents the skill delegates
+to.
+
+```bash
+mkdir -p /path/to/target-repo/.github/skills /path/to/target-repo/.github/agents
+cp -R .github/skills/contributor-scout /path/to/target-repo/.github/skills/
+cp .github/agents/*.agent.md /path/to/target-repo/.github/agents/
+```
+
+> Do **not** do this inside a third-party repository you intend to contribute
+> to — it would add untracked files to their tree. Copy into a private fork,
+> or use Option A for the skill and accept that reviewer delegation runs
+> in-line instead of as separate custom agents.
+
+Verify:
+
+```bash
+ls /path/to/target-repo/.github/skills/contributor-scout/SKILL.md
+ls /path/to/target-repo/.github/agents/ | grep -E 'security-reviewer|contribution-ranker'
+```
+
+Reload the window, then type `/` in Copilot Chat to confirm `contributor-scout`
+is listed.
 
 ### GitHub CLI setup (optional, recommended)
 
@@ -278,10 +333,10 @@ source modification.
 
 ## Usage
 
-Open Claude Code from the root of a cloned open-source repository. Invoke the
-skill by name (`/contributor-scout <mode>` where your Claude Code version
-supports user-invocable skills) or in plain language — both work, because the
-mode is just an argument.
+Open Claude Code or GitHub Copilot Chat from the root of a cloned open-source
+repository. Invoke the skill by name (`/contributor-scout <mode>` where your
+installed version supports user-invocable skills/slash commands) or in plain
+language — both work, because the mode is just an argument.
 
 ### 1. Start with profile mode
 
@@ -632,15 +687,18 @@ contributor-scout/
 ├── README.md
 ├── LICENSE                          MIT
 ├── .gitignore
-├── .claude-plugin/plugin.json       plugin manifest
+├── .claude-plugin/plugin.json       Claude Code plugin manifest
 ├── AI_Assisted_Open_Source_Contribution_Discovery_Plan.md   design source of truth
-├── skills/contributor-scout/
+├── skills/contributor-scout/        Claude Code skill
 │   ├── SKILL.md                     workflow, hard constraints, modes, gates
 │   ├── references/                  12 review playbooks (loaded per phase)
 │   ├── templates/                   11 report templates
 │   └── scripts/                     5 stdlib-only Python helpers
-├── agents/                          6 specialised subagent definitions
-├── hooks/                           optional discovery-guard hook (opt-in)
+├── agents/                          6 Claude Code subagent definitions
+├── .github/                         GitHub Copilot equivalents
+│   ├── skills/contributor-scout/    same SKILL.md, references, templates, scripts
+│   └── agents/*.agent.md            6 custom-agent equivalents of agents/
+├── hooks/                           optional discovery-guard hook (opt-in, both hosts)
 ├── examples/                        worked fictional output
 └── docs/
     ├── architecture.md
