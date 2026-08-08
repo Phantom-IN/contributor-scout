@@ -2,14 +2,18 @@
 """OPTIONAL PreToolUse hook that enforces Contributor Scout's discovery-only rule.
 
 This hook is NOT installed automatically. Nothing in this project registers it.
-To use it, follow hooks/README.md and add it to your own settings file
-(Claude Code `settings.json`) or hooks config (GitHub Copilot
-`.github/hooks/*.json`) deliberately.
+To use it, follow hooks/README.md and add it to your own settings file or hooks
+config deliberately:
+
+  Claude Code     `.claude/settings.json`
+  GitHub Copilot  `.github/hooks/*.json`
+  Cursor          `.cursor/hooks.json`
+  Antigravity     `.agents/hooks.json`
 
 What it does
 ------------
-Reads a PreToolUse hook payload on stdin - either Claude Code's or GitHub
-Copilot's shape, both are accepted - and denies:
+Reads a pre-tool-use hook payload on stdin - all four host shapes are
+accepted - and denies:
 
   * Write / Edit / NotebookEdit to any path outside `contribution-discovery/`
   * Bash/terminal commands that mutate Git state (commit, push, reset --hard,
@@ -23,9 +27,12 @@ Everything else is allowed to fall through to normal permission handling.
 
 Exit behaviour
 --------------
-Emits the JSON `permissionDecision` form on stdout and exits 0. A malformed
-payload is allowed through (exit 0, no decision) rather than blocking the
-session - this hook is a safety net, not the only control.
+Emits one JSON object on stdout carrying every host's deny spelling at once
+(Claude Code's `hookSpecificOutput.permissionDecision`, Cursor's `permission`,
+Antigravity's `decision`) and exits 0. Each host reads the key it knows and
+ignores the rest, so a single script serves all four. A malformed payload is
+allowed through (exit 0, no decision) rather than blocking the session - this
+hook is a safety net, not the only control.
 
 Limitations
 -----------
@@ -101,22 +108,58 @@ REDIRECT_RE = re.compile(r"(?<![0-9<>])>>?\s*([^\s;|&]+)")
 
 
 def decision(action: str, reason: str) -> Dict[str, Any]:
-    """Build a PreToolUse hook response."""
+    """Build a deny/allow response every supported host can read.
+
+    Each host looks for its own key and ignores the others:
+
+      Claude Code / Copilot  hookSpecificOutput.permissionDecision
+      Cursor                 permission (+ user_message, agent_message)
+      Antigravity            decision (+ reason)
+    """
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": action,
             "permissionDecisionReason": reason,
-        }
+        },
+        "permission": action,
+        "user_message": reason,
+        "agent_message": reason,
+        "decision": action,
+        "reason": reason,
     }
 
 
 def _field(payload: Dict[str, Any], *keys: str) -> Any:
-    """Return the first present value across Claude Code / Copilot key spellings."""
+    """Return the first present value across the hosts' key spellings."""
+    if not isinstance(payload, dict):
+        return None
     for key in keys:
-        if key in payload and payload[key] not in (None, ""):
+        if key in payload and payload[key] not in (None, "", [], {}):
             return payload[key]
     return None
+
+
+def tool_call(payload: Dict[str, Any]) -> Tuple[Optional[str], Dict[str, Any]]:
+    """Extract (tool name, tool arguments) from any supported host payload.
+
+    Claude Code / Copilot / Cursor `preToolUse`  {tool_name, tool_input}
+    Antigravity `PreToolUse`                     {toolCall: {name, args}}
+    Cursor `beforeShellExecution`                {command, cwd} - no tool name
+    """
+    call = _field(payload, "toolCall", "tool_call")
+    if isinstance(call, dict):
+        args = _field(call, "args", "arguments", "input", "parameters") or {}
+        return _field(call, "name", "toolName", "tool"), args if isinstance(args, dict) else {}
+
+    name = _field(payload, "tool_name", "toolName", "tool")
+    args = _field(payload, "tool_input", "toolInput", "input", "parameters") or {}
+    if not isinstance(args, dict):
+        args = {}
+    if not name and _field(payload, "command"):
+        # Cursor's beforeShellExecution carries the command at the top level.
+        return "beforeShellExecution", payload
+    return name, args
 
 
 def _is_write_tool(name: Optional[str]) -> bool:
@@ -125,7 +168,8 @@ def _is_write_tool(name: Optional[str]) -> bool:
     if name in WRITE_TOOLS:
         return True
     lowered = name.lower()
-    return any(token in lowered for token in ("write", "edit", "create_file"))
+    return any(token in lowered
+               for token in ("write", "edit", "create_file", "replace_file"))
 
 
 def _is_exec_tool(name: Optional[str]) -> bool:
@@ -134,11 +178,17 @@ def _is_exec_tool(name: Optional[str]) -> bool:
     if name == "Bash":
         return True
     lowered = name.lower()
-    return any(token in lowered for token in ("bash", "terminal", "shell", "execute", "run_in"))
+    return any(token in lowered
+               for token in ("bash", "terminal", "shell", "execute", "run_in",
+                             "run_command", "runcommand"))
 
 
-def project_dir(payload: Dict[str, Any]) -> Path:
-    raw = (_field(payload, "cwd", "workingDirectory", "workspaceFolder")
+def project_dir(payload: Dict[str, Any], args: Dict[str, Any]) -> Path:
+    roots = _field(payload, "workspace_roots", "workspacePaths", "workspaceRoots")
+    first_root = roots[0] if isinstance(roots, list) and roots else None
+    raw = (_field(args, "Cwd", "cwd")
+           or _field(payload, "cwd", "workingDirectory", "workspaceFolder")
+           or first_root
            or os.environ.get("CLAUDE_PROJECT_DIR")
            or os.getcwd())
     return Path(raw).resolve()
@@ -157,10 +207,10 @@ def is_inside_allowed_root(target: str, root: Path) -> bool:
     return bool(relative.parts) and relative.parts[0] == ALLOWED_WRITE_ROOT
 
 
-def check_write(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
-    tool_input = _field(payload, "tool_input", "toolInput", "input", "parameters") or {}
-    target = _field(tool_input, "file_path", "filePath", "path")
-    if not target:
+def check_write(args: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
+    target = _field(args, "file_path", "filePath", "path",
+                    "TargetFile", "AbsolutePath", "target_file")
+    if not target or not isinstance(target, str):
         return None
     if is_inside_allowed_root(target, root):
         return None
@@ -172,10 +222,9 @@ def check_write(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]
     )
 
 
-def check_bash(payload: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
-    tool_input = _field(payload, "tool_input", "toolInput", "input", "parameters") or {}
-    command = _field(tool_input, "command", "cmd") or ""
-    if not command:
+def check_bash(args: Dict[str, Any], root: Path) -> Optional[Dict[str, Any]]:
+    command = _field(args, "command", "cmd", "CommandLine", "commandLine") or ""
+    if not command or not isinstance(command, str):
         return None
 
     for pattern, reason in DENIED_COMMANDS:
@@ -209,14 +258,14 @@ def main() -> int:
     if not isinstance(payload, dict):
         return 0
 
-    tool = _field(payload, "tool_name", "toolName", "tool")
-    root = project_dir(payload)
+    tool, args = tool_call(payload)
+    root = project_dir(payload, args)
 
     result: Optional[Dict[str, Any]] = None
     if _is_write_tool(tool):
-        result = check_write(payload, root)
+        result = check_write(args, root)
     elif _is_exec_tool(tool):
-        result = check_bash(payload, root)
+        result = check_bash(args, root)
 
     if result is not None:
         json.dump(result, sys.stdout)

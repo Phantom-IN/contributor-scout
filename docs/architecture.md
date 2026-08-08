@@ -125,14 +125,46 @@ loaded. Everything else is loaded only when its phase runs:
 
 ```text
 SKILL.md                       always
-references/*.md                per phase (11 files)
+references/*.md                per phase (12 files)
 templates/*.md                 when writing a document
 scripts/*.py                   executed, never read into context
-agents/*.md                    loaded by the subagent, not the orchestrator
+agent definitions              loaded by the subagent, not the orchestrator
 ```
 
 A `profile`-mode run loads two references and one template. A `full` run loads
 all of them, but never simultaneously.
+
+---
+
+## Host packaging
+
+The same architecture ships four times, because each host discovers skills and
+agents from a different path. Nothing about the pipeline changes between them.
+
+| Host | Skill | Agents | Hook config |
+|---|---|---|---|
+| Claude Code | `skills/contributor-scout/` | `agents/*.md` | `.claude/settings.json` |
+| GitHub Copilot | `.github/skills/contributor-scout/` | `.github/agents/*.agent.md` | `.github/hooks/*.json` |
+| Cursor | `.cursor/skills/contributor-scout/` | `.cursor/agents/*.md` | `.cursor/hooks.json` |
+| Antigravity | `.agents/skills/contributor-scout/` | `.agents/agents/*.md` | `.agents/hooks.json` |
+
+`skills/contributor-scout/` is the **canonical** tree. Within each copy,
+`references/`, `templates/` and `scripts/` are byte-identical; only `SKILL.md`
+frontmatter, three "where do the subagents live" sentences, and the agent
+frontmatter differ. Antigravity additionally gets
+`.agents/workflows/contributor-scout.md`, which is what makes
+`/contributor-scout <mode>` a slash command on that host.
+
+Four copies drift, so drift is a checked property:
+
+```bash
+python3 tools/sync_hosts.py           # report, exit 1 on drift
+python3 tools/sync_hosts.py --write   # copy the canonical payload over
+```
+
+It enforces byte-identical shared subtrees, byte-identical agent bodies, and
+matching `SKILL.md` section headings — the three things that must never diverge
+silently. Deliberate per-host differences are left alone.
 
 ---
 

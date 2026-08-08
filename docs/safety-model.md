@@ -15,11 +15,28 @@ Safety comes from three independent layers, because any one of them can fail.
 | Layer | Mechanism | Fails when |
 |---|---|---|
 | 1. Instruction | `SKILL.md` §2 hard constraints, repeated in every agent definition | The model does something unexpected |
-| 2. Permission | Claude Code allow/ask/deny rules in `settings.json`, or Copilot's own tool-confirmation prompts | A command's shape is not covered by a rule |
-| 3. Hook | The optional [`discovery_guard.py`](../hooks/discovery_guard.py) `PreToolUse` hook (Claude `settings.json` or Copilot `.github/hooks/*.json`) | A creatively-shaped command evades textual inspection |
+| 2. Permission | The host's own gate — see the table below | A command's shape is not covered by a rule |
+| 3. Hook | The optional [`discovery_guard.py`](../hooks/discovery_guard.py) pre-tool-use hook | A creatively-shaped command evades textual inspection |
 
 Layers 2 and 3 overlap deliberately. Neither is a sandbox; together with layer 1
 they make the discovery-only property hard to violate by accident.
+
+Layer 2 is the layer that differs by host, and it is worth knowing which one you
+are relying on:
+
+| Host | Layer 2 mechanism | Layer 3 config file |
+|---|---|---|
+| Claude Code | allow/ask/deny rules in `.claude/settings.json` — the strongest of the four, because rules are declarative and match on command prefix | `.claude/settings.json` |
+| GitHub Copilot | per-tool confirmation prompts | `.github/hooks/*.json` |
+| Cursor | per-command confirmation prompts, plus command allow/deny lists in Cursor settings | `.cursor/hooks.json` |
+| Antigravity | the agent's `commandExecutionPolicy`. The bundled agents ship `auto`, which runs read-only `git` and `gh` queries without prompting | `.agents/hooks.json` |
+
+That last row is the reason the hook is recommended most strongly on
+Antigravity: `auto` is what makes duplicate detection usable without a
+confirmation on every `gh` query, and it is also what removes the per-command
+prompt the other three hosts give you for free. Set
+`commandExecutionPolicy: sandbox` in the agent files instead if you would rather
+trade duplicate-detection coverage for that prompt.
 
 ---
 
@@ -41,7 +58,7 @@ the repository's existing test suite
 the repository's existing static-analysis and lint tools
 the repository's existing benchmarks
 writes under contribution-discovery/
-python3 skills/contributor-scout/scripts/*
+python3 <installed-skill-dir>/scripts/*
 ```
 
 ### Requires approval
@@ -151,10 +168,14 @@ The hook is **not installed automatically**. See [`hooks/README.md`](../hooks/RE
 for installation, verification, removal, and its limitations.
 
 Important trade-off: the hook applies to every tool call in the session, not just
-Contributor Scout's. Enable it in the *analysed repository's*
-`.claude/settings.json` (Claude Code) or `.github/hooks/*.json` (GitHub Copilot)
-for the run, or use a session dedicated to discovery - enabling it at user
-scope will block ordinary development everywhere.
+Contributor Scout's. Enable it in the *analysed repository's* config file (see
+the layer-2 table above for the path on your host) for the duration of the run,
+or use a session dedicated to discovery — enabling it at user scope will block
+ordinary development everywhere.
+
+One script covers all four hosts. It accepts each host's payload shape and emits
+a deny that carries every host's spelling at once, so there is nothing to
+configure beyond the path.
 
 ---
 
