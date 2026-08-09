@@ -17,5 +17,9 @@ venv/
 .vscode/
 *.swp
 
-# Local Claude Code overrides
+# Local host overrides. The hook config files in particular are auto-loaded by
+# their host from these paths, so a local copy made for testing must never be
+# committed - see hooks/README.md.
 .claude/settings.local.json
+.cursor/hooks.json
+.agents/hooks.json

@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 440" width="1280" height="440" role="img" aria-label="Contributor Scout — evidence-first open-source contribution discovery, for Claude Code, Copilot, Cursor and Antigravity">
+  <title>Contributor Scout</title>
+  <desc>Evidence-first open-source contribution discovery for Claude Code, GitHub Copilot, Cursor and Antigravity. Reads, reasons, reports — it never writes code.</desc>
+
+  <defs>
+    <linearGradient id="bg-light" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8ecf1"/>
+    </linearGradient>
+    <radialGradient id="vig-light" cx="50%" cy="46%" r="78%">
+      <stop offset="55%" stop-color="#e8ecf1" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#e8ecf1" stop-opacity="0.16"/>
+    </radialGradient>
+    <linearGradient id="pane-light" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#fbfcfd"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="wm-light" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a7f37"/>
+      <stop offset="52%" stop-color="#0969da"/>
+      <stop offset="100%" stop-color="#1a7f37"/>
+    </linearGradient>
+    <linearGradient id="strip-light" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a7f37"/>
+      <stop offset="50%" stop-color="#0969da"/>
+      <stop offset="100%" stop-color="#1a7f37"/>
+    </linearGradient>
+    <linearGradient id="rule-light" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a7f37" stop-opacity="0"/>
+      <stop offset="34%" stop-color="#1a7f37" stop-opacity="0.85"/>
+      <stop offset="66%" stop-color="#0969da" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0969da" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="beam-light" x1="0" y1="0" x2="1" y2="0.35">
+      <stop offset="0%" stop-color="#0969da" stop-opacity="0"/>
+      <stop offset="42%" stop-color="#0969da" stop-opacity="0.05"/>
+      <stop offset="58%" stop-color="#1a7f37" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#1a7f37" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="fade-light" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e4e8ed" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#e4e8ed" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#e4e8ed" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid-light" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#0d1117" opacity="0.045"/>
+    </pattern>
+    <filter id="glow-light" x="-12%" y="-90%" width="124%" height="280%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feComponentTransfer in="b">
+        <feFuncA type="linear" slope="0.14"/>
+      </feComponentTransfer>
+    </filter>
+    <filter id="drop-light" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14"
+                    flood-color="#1f2328" flood-opacity="0.16"/>
+    </filter>
+    <clipPath id="clip-light">
+      <rect x="40" y="34" width="1200" height="372" rx="16"/>
+    </clipPath>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1280" height="440" fill="url(#bg-light)"/>
+  <rect width="1280" height="440" fill="url(#vig-light)"/>
+  <path d="M16 16 h13 M16 16 v13" stroke="#0969da" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.45"/>
+  <path d="M1264 16 h-13 M1264 16 v13" stroke="#0969da" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.45"/>
+  <path d="M16 424 h13 M16 424 v-13" stroke="#0969da" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.45"/>
+  <path d="M1264 424 h-13 M1264 424 v-13" stroke="#0969da" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.45"/>
+
+  <!-- terminal pane -->
+  <rect x="40" y="34" width="1200" height="372" rx="16"
+        fill="#ffffff" filter="url(#drop-light)"/>
+  <g clip-path="url(#clip-light)">
+    <rect x="40" y="34" width="1200" height="372" fill="url(#pane-light)"/>
+    <rect x="40" y="34" width="1200" height="372" fill="url(#grid-light)"/>
+    <rect x="40" y="34" width="1200" height="372" fill="url(#beam-light)"/>
+    <rect x="40" y="34" width="1200" height="44" fill="#f6f8fa"/>
+    <rect x="40" y="34" width="1200" height="3" fill="url(#strip-light)" opacity="0.8"/>
+    <line x1="40" y1="78" x2="1240" y2="78" stroke="#d0d7de"/>
+  </g>
+  <rect x="40" y="34" width="1200" height="372" rx="16" fill="none" stroke="#d0d7de"/>
+
+  <!-- chrome bar -->
+  <circle cx="66" cy="56.0" r="6" fill="#ff5f57" opacity="0.92"/>
+  <circle cx="88" cy="56.0" r="6" fill="#febc2e" opacity="0.92"/>
+  <circle cx="110" cy="56.0" r="6" fill="#28c840" opacity="0.92"/>
+  <text x="144" y="60.6" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.6" fill="#818b98">contributor-scout</text>
+  <text x="1216.0" y="60.2" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="11.5" letter-spacing="0.5" fill="#818b98">claude code<tspan fill="#9aa4b0"> · </tspan>copilot<tspan fill="#9aa4b0"> · </tspan>cursor<tspan fill="#9aa4b0"> · </tspan>antigravity</text>
+
+  <!-- prompt -->
+  <text x="68" y="116" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" letter-spacing="0.8" fill="#818b98"><tspan fill="#1a7f37">$</tspan> contributor-scout profile</text>
+  <rect x="340.8" y="104" width="9" height="16" rx="1.5" fill="#0969da" opacity="0.65"/>
+
+  <!-- wordmark -->
+  <text x="645.2" y="206" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="63" font-weight="700" letter-spacing="10.5" fill="url(#wm-light)" filter="url(#glow-light)">CONTRIBUTOR SCOUT</text>
+  <text x="645.2" y="206" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="63" font-weight="700" letter-spacing="10.5" fill="url(#wm-light)">CONTRIBUTOR SCOUT</text>
+
+  <!-- accent rule + tagline -->
+  <rect x="270" y="234" width="740" height="2" rx="1" fill="url(#rule-light)"/>
+  <text x="640.8" y="272" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="19" letter-spacing="1.6" fill="#59636e">evidence-first open-source contribution discovery</text>
+
+  <!-- evidence tags -->
+  <rect x="370.6" y="302" width="83.3" height="28" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+  <text x="412.2" y="320.7" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.9" fill="#3d444d"><tspan fill="#1a7f37">[</tspan>CODE<tspan fill="#1a7f37">]</tspan></text>
+  <rect x="464.9" y="302" width="83.3" height="28" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+  <text x="506.6" y="320.7" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.9" fill="#3d444d"><tspan fill="#1a7f37">[</tspan>TEST<tspan fill="#1a7f37">]</tspan></text>
+  <rect x="559.2" y="302" width="109.4" height="28" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+  <text x="613.9" y="320.7" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.9" fill="#3d444d"><tspan fill="#1a7f37">[</tspan>HISTORY<tspan fill="#1a7f37">]</tspan></text>
+  <rect x="679.6" y="302" width="135.5" height="28" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+  <text x="747.4" y="320.7" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.9" fill="#3d444d"><tspan fill="#1a7f37">[</tspan>MAINTAINER<tspan fill="#1a7f37">]</tspan></text>
+  <rect x="826.1" y="302" width="83.3" height="28" rx="14" fill="#ffffff" stroke="#d8dee4"/>
+  <text x="867.8" y="320.7" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.9" fill="#3d444d"><tspan fill="#1a7f37">[</tspan>DOCS<tspan fill="#1a7f37">]</tspan></text>
+
+  <!-- footer -->
+  <rect x="66" y="356" width="1148" height="1" fill="url(#fade-light)"/>
+  <text x="68" y="384" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.8" fill="#818b98">reads &#183; reasons &#183; reports</text>
+  <text x="1212" y="384" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="0.8" fill="#818b98">it never writes code</text>
+</svg>

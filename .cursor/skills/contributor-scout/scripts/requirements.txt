@@ -1,0 +1,15 @@
+# Contributor Scout helper scripts
+#
+# All five scripts use only the Python standard library and require Python 3.8+.
+# There is deliberately nothing to install - `pip install -r requirements.txt`
+# is a no-op, and no dependency may be added without the user's approval.
+#
+# External tools used when present, never installed automatically:
+#   git  - required for collect_git_history.py and the Git parts of
+#          collect_repo_metadata.py
+#   gh   - optional; search_github_candidates.py degrades to LOW
+#          duplicate-detection confidence without it.
+#          Install: https://cli.github.com/  then `gh auth login`
+#
+# Verify with:
+#   python3 -c 'import sys; assert sys.version_info >= (3, 8), sys.version'
