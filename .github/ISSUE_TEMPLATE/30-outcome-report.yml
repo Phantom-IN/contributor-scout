@@ -1,0 +1,87 @@
+name: Maintainer outcome report
+description: A scouted candidate met real maintainers — tell us what happened. Feeds SHOWCASE.md and the scoring calibration. Rejections are as valuable as merges.
+title: "[outcome] "
+labels: ["outcome"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is how the project keeps itself honest: **the maintainer acceptance rate of scouted
+        contributions is the metric**, published in
+        [SHOWCASE.md](https://github.com/Phantom-IN/contributor-scout/blob/main/SHOWCASE.md) —
+        including the outcomes that did not go our way. Thank you for closing the loop.
+  - type: input
+    id: target-repo
+    attributes:
+      label: Target repository
+      placeholder: https://github.com/owner/repo
+    validations:
+      required: true
+  - type: input
+    id: artifact
+    attributes:
+      label: Public link
+      description: The PR, issue, or discussion where maintainers responded. For responsibly disclosed security findings, link the published advisory or fix only — nothing undisclosed.
+      placeholder: https://github.com/owner/repo/pull/123
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Candidate category
+      options:
+        - Security (SEC)
+        - Performance (PERF)
+        - Feature (FEAT)
+    validations:
+      required: true
+  - type: input
+    id: mode
+    attributes:
+      label: Mode used
+      placeholder: "full (profile first), then validate PERF-001"
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Merged as proposed
+        - Merged with changes
+        - Constructively discussed — implementation pending
+        - Redirected — maintainers steered to a different approach
+        - Declined
+        - No response after 30+ days
+        - Responsibly disclosed — fix/advisory published
+        - No candidate met the threshold, and that call proved right
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: What happened
+      description: A few sentences. If declined or redirected — what did the maintainers know that the dossier missed? That sentence is the calibration data.
+    validations:
+      required: true
+  - type: textarea
+    id: dossier-accuracy
+    attributes:
+      label: Dossier accuracy in hindsight
+      description: Was the evidence right? The duplicate status? The score band? The recommended next action ("discuss first" vs "implement")?
+    validations:
+      required: false
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Showcase listing
+      options:
+        - label: Add this entry to SHOWCASE.md with my GitHub handle.
+        - label: Add it anonymised (repository and outcome, no handle).
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: The candidate genuinely originated from a Contributor Scout run, and I verified and authored the contribution myself.
+          required: true

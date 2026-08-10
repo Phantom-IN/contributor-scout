@@ -1,0 +1,34 @@
+{
+  "name": "phantom-in",
+  "owner": {
+    "name": "Vaibhav Vanage",
+    "url": "https://github.com/Phantom-IN"
+  },
+  "metadata": {
+    "description": "Plugins by Phantom-IN",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "contributor-scout",
+      "source": "./",
+      "description": "Evidence-first open-source contribution discovery. Analyses a cloned repository for security, performance, and feature contribution opportunities; validates non-duplication, maintainer alignment, and historical context; writes scored discovery dossiers. Discovery only - never modifies source code or opens issues and pull requests.",
+      "version": "1.2.0",
+      "author": {
+        "name": "Vaibhav Vanage"
+      },
+      "homepage": "https://github.com/Phantom-IN/contributor-scout",
+      "repository": "https://github.com/Phantom-IN/contributor-scout",
+      "license": "MIT",
+      "keywords": [
+        "open-source",
+        "contribution",
+        "code-review",
+        "security",
+        "performance",
+        "discovery"
+      ],
+      "category": "productivity"
+    }
+  ]
+}
