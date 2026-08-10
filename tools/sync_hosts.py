@@ -74,8 +74,27 @@ def headings(text: str) -> List[str]:
     return HEADING_RE.findall(text)
 
 
+# Build artifacts and OS junk are not payload: they appear on one machine and
+# not another (CI writes __pycache__ during the compile check; Finder drops
+# .DS_Store), so counting them would report drift where none exists - and
+# --write must never copy them into the mirrors.
+IGNORED_DIRS = {"__pycache__"}
+IGNORED_FILES = {".DS_Store"}
+IGNORED_SUFFIXES = {".pyc", ".pyo"}
+
+
 def relative_files(root: Path) -> List[Path]:
-    return sorted(p.relative_to(root) for p in root.rglob("*") if p.is_file())
+    files = []
+    for p in root.rglob("*"):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(root)
+        if IGNORED_DIRS.intersection(rel.parts):
+            continue
+        if rel.name in IGNORED_FILES or rel.suffix in IGNORED_SUFFIXES:
+            continue
+        files.append(rel)
+    return sorted(files)
 
 
 def check_shared_subtrees(write: bool) -> List[str]:
