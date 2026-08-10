@@ -9,6 +9,14 @@ gates, or the safety model, not just to code.
 
 ## [Unreleased]
 
+### Fixed
+
+- `tools/sync_hosts.py` no longer counts build artifacts and OS junk
+  (`__pycache__/`, `*.pyc`, `.DS_Store`) as host-tree drift, and `--write`
+  never copies them into the mirrors. Previously a fresh clone failed the
+  drift check when the compile step ran before it — which is exactly the
+  order CI and CONTRIBUTING use.
+
 ## [1.2.0] - 2026-08-10
 
 Open-source launch release. No skill-behaviour changes; everything here is
