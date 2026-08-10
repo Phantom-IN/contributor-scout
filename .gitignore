@@ -23,3 +23,6 @@ venv/
 .claude/settings.local.json
 .cursor/hooks.json
 .agents/hooks.json
+
+# Maintainer-local launch/marketing material - not part of the public project
+marketing/

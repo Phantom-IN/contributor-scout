@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability (private)
+    url: https://github.com/Phantom-IN/contributor-scout/security/advisories/new
+    about: Hook bypasses, prompt-injection vectors, script injection — never a public issue. See SECURITY.md.
+  - name: Vulnerability found in a repository you analysed
+    url: https://github.com/Phantom-IN/contributor-scout/blob/main/skills/contributor-scout/references/responsible-disclosure.md
+    about: That belongs to the target project's own disclosure channel, not this tracker. This guide shows how to find it.

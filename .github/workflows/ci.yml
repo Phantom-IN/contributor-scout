@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported and a current version — the scripts are
+        # standard-library-only, so this is compatibility, not deps.
+        python-version: ["3.8", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Everything compiles
+        run: python3 -m py_compile skills/contributor-scout/scripts/*.py hooks/*.py tools/*.py
+
+      - name: The four host trees agree
+        run: python3 tools/sync_hosts.py
+
+      - name: Worked examples still validate
+        run: |
+          python3 skills/contributor-scout/scripts/validate_report_schema.py \
+            --candidate examples/sample-candidate.md --strict
+
+      - name: Scoring round-trip on the example candidate
+        run: |
+          set -o pipefail
+          python3 skills/contributor-scout/scripts/calculate_candidate_score.py --example \
+            | python3 skills/contributor-scout/scripts/calculate_candidate_score.py --input -
+
+      - name: Hook denies git writes in every host dialect
+        run: |
+          set -euo pipefail
+          deny() {
+            out=$(echo "$1" | python3 hooks/discovery_guard.py)
+            echo "$out" | grep -q '"deny"' || { echo "MISSING DENY for payload: $1"; exit 1; }
+          }
+          # Claude Code dialect
+          deny '{"tool_name":"Bash","tool_input":{"command":"git commit -m x"},"cwd":"'"$PWD"'"}'
+          deny '{"tool_name":"Write","tool_input":{"file_path":"'"$PWD"'/src/app.py","content":"x"},"cwd":"'"$PWD"'"}'
+          # Copilot / Cursor dialect
+          deny '{"hook_event_name":"beforeShellExecution","command":"git push","cwd":"'"$PWD"'"}'
+          # Antigravity dialect
+          deny '{"toolCall":{"name":"run_command","args":{"CommandLine":"git push","Cwd":"'"$PWD"'"}}}'
+          # GitHub write via gh
+          deny '{"tool_name":"Bash","tool_input":{"command":"gh pr create --title x"},"cwd":"'"$PWD"'"}'
+
+      - name: Hook stays silent for allowed read-only commands
+        run: |
+          set -euo pipefail
+          out=$(echo '{"tool_name":"Bash","tool_input":{"command":"git log --oneline"},"cwd":"'"$PWD"'"}' \
+            | python3 hooks/discovery_guard.py)
+          test -z "$out" || { echo "UNEXPECTED OUTPUT for allowed command: $out"; exit 1; }
+
+  manifests:
+    name: Manifests and metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Plugin and marketplace manifests are valid JSON
+        run: |
+          python3 -m json.tool .claude-plugin/plugin.json > /dev/null
+          python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
+
+      - name: Plugin and marketplace versions agree
+        run: |
+          python3 - <<'EOF'
+          import json
+          plugin = json.load(open(".claude-plugin/plugin.json"))
+          market = json.load(open(".claude-plugin/marketplace.json"))
+          entry = next(p for p in market["plugins"] if p["name"] == plugin["name"])
+          assert entry.get("version") == plugin["version"], (
+              f'marketplace lists {entry.get("version")}, plugin.json says {plugin["version"]}'
+          )
+          print(f'ok: {plugin["name"]} {plugin["version"]}')
+          EOF

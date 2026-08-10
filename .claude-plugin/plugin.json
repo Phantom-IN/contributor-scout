@@ -1,7 +1,7 @@
 {
   "name": "contributor-scout",
   "description": "Evidence-first open-source contribution discovery. Analyses a cloned repository for security, performance, and feature contribution opportunities; validates non-duplication, maintainer alignment, and historical context; writes scored discovery dossiers. Discovery only - never modifies source code or opens issues and pull requests.",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "author": {
     "name": "Vaibhav Vanage"
   },
