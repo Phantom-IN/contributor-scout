@@ -1,0 +1,94 @@
+name: Run-failure report
+description: The most valuable issue you can file — a real run produced a wrong result. False positive, missed duplicate, wrong rejection, missed finding.
+title: "[run] "
+labels: ["run-failure"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you.** Failure reports from real runs are the raw material every playbook and
+        scoring improvement is built from — a false positive that survived adversarial validation
+        is worth more to this project than a new feature.
+
+        If you are unsure whether the run went wrong "enough" to report: report it.
+  - type: dropdown
+    id: failure-class
+    attributes:
+      label: Failure class
+      options:
+        - False positive — a shortlisted candidate is not real or not correctly understood
+        - Missed duplicate — existing equivalent work the two-pass search did not find
+        - Wrong rejection — a rejected candidate that is actually valid and valuable
+        - Missed finding — a clear opportunity in reviewed scope that no reviewer surfaced
+        - Bad evidence — a claim carried a stronger tag than its source justified
+        - Scoring / ranking error — the deterministic gates passed something they should not have (or vice versa)
+        - Safety near-miss — the system attempted or proposed something the hard constraints forbid
+    validations:
+      required: true
+  - type: input
+    id: target-repo
+    attributes:
+      label: Target repository
+      description: Public URL if possible. If you cannot name it, describe language, size, and domain.
+      placeholder: https://github.com/owner/repo (or "mid-size Go CLI, ~40k LOC")
+    validations:
+      required: true
+  - type: input
+    id: mode
+    attributes:
+      label: Mode and candidate
+      description: Which mode ran, and the candidate ID if one exists.
+      placeholder: "full · PERF-002"
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: What the system concluded
+      description: Paste the relevant dossier excerpt(s) — the claim, its evidence tags, duplicate status, and score if applicable. Trim freely; redact anything sensitive.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: What is actually true — with evidence
+      description: The ground truth the system missed, with the same standard of evidence it should have met. Link the duplicate PR it missed, the code path that makes the finding unreachable, the maintainer statement it ignored.
+    validations:
+      required: true
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Which gate should have caught this?
+      description: Best guess is fine — it routes the fix.
+      options:
+        - Phase 1 repository comprehension (path importance, trust boundaries)
+        - Reachability / input-to-impact analysis (security)
+        - Measurement / benchmark design (performance)
+        - Demand evidence (features)
+        - Duplicate detection (query generation or search coverage)
+        - Git-history tracing (introducing commit / original constraints)
+        - Maintainer-alignment analysis
+        - Adversarial validation
+        - Deterministic scoring gates
+        - Evidence-tag discipline
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: degraded
+    attributes:
+      label: Degraded-mode context
+      description: Was `gh` authenticated? Did tests run? Anything from `evidence/github-searches.json` or `03-review-coverage.md` about limits hit during the run?
+      placeholder: gh authenticated · tests ran · no scope limits recorded
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I verified the ground truth myself — this is not a suspicion.
+          required: true
+        - label: This report contains no undisclosed vulnerability details of the target repository.
+          required: true

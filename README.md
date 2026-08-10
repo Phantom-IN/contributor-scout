@@ -9,6 +9,7 @@
 <br>
 
 [![License](https://img.shields.io/badge/license-MIT-0969da?style=flat-square)](LICENSE)
+[![CI](https://github.com/Phantom-IN/contributor-scout/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Phantom-IN/contributor-scout/actions/workflows/ci.yml)
 [![Hosts](https://img.shields.io/badge/hosts-Claude%20Code%20%C2%B7%20Copilot%20%C2%B7%20Cursor%20%C2%B7%20Antigravity-1a7f37?style=flat-square)](#supported-hosts)
 [![Python](https://img.shields.io/badge/python-3.8%2B-3572a5?style=flat-square)](#requirements)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-1a7f37?style=flat-square)](skills/contributor-scout/scripts/requirements.txt)
@@ -58,6 +59,7 @@ change should happen.
 - [Project structure](#project-structure)
 - [Contributing](#contributing)
 - [Roadmap](#roadmap)
+- [Maintainers](#maintainers)
 
 </details>
 
@@ -207,18 +209,20 @@ gh --version        # optional
 
 ### 60 seconds to a first run
 
+**Claude Code** — no clone needed, straight from the plugin marketplace:
+
+```text
+/plugin marketplace add Phantom-IN/contributor-scout
+/plugin install contributor-scout@phantom-in
+```
+
+**Other hosts** — clone, then copy your host's tree into the personal/user
+scope so it works in every project (full per-host detail is in
+[Installation](#installation)):
+
 ```bash
 git clone https://github.com/Phantom-IN/contributor-scout.git
 cd contributor-scout
-```
-
-Install for your host — the personal/user-scope install, so it works in every
-project (full per-host detail is in [Installation](#installation)):
-
-```bash
-# Claude Code
-mkdir -p ~/.claude/skills ~/.claude/agents
-cp -R skills/contributor-scout ~/.claude/skills/ && cp agents/*.md ~/.claude/agents/
 
 # Cursor
 mkdir -p ~/.cursor/skills ~/.cursor/agents
@@ -253,8 +257,19 @@ Pick your host. Every install ships the same behaviour; only the paths differ.
 
 <br>
 
-**Option A — personal skill (recommended).** Available in every project on your
-machine.
+**Option A — plugin marketplace (recommended).** Installs the skill and all six
+reviewer agents together, available in every project, updatable in place:
+
+```text
+/plugin marketplace add Phantom-IN/contributor-scout
+/plugin install contributor-scout@phantom-in
+```
+
+Later, `/plugin marketplace update phantom-in` pulls new releases. The
+discovery-guard hook is deliberately **not** auto-registered by the plugin —
+it stays opt-in; see [hooks/README.md](hooks/README.md).
+
+**Option B — personal skill copy.** The same effect, managed by hand:
 
 ```bash
 mkdir -p ~/.claude/skills ~/.claude/agents
@@ -272,7 +287,7 @@ ls ~/.claude/agents/ | grep -E 'security-reviewer|contribution-ranker'
 Restart Claude Code, then run `/skills` (or ask "what skills are available?") to
 confirm `contributor-scout` is listed.
 
-**Option B — project-local.** Scoped to one repository; useful when you want the
+**Option C — project-local.** Scoped to one repository; useful when you want the
 skill checked in alongside a team's analysis conventions.
 
 ```bash
@@ -280,11 +295,6 @@ mkdir -p /path/to/target-repo/.claude/skills /path/to/target-repo/.claude/agents
 cp -R skills/contributor-scout /path/to/target-repo/.claude/skills/
 cp agents/*.md /path/to/target-repo/.claude/agents/
 ```
-
-**Option C — plugin layout.** This repository is already shaped as a Claude Code
-plugin: `.claude-plugin/plugin.json` plus top-level `skills/`, `agents/`, and
-`hooks/`. If your Claude Code version supports local plugin installation, point
-it at this directory. Otherwise use Option A — it is equivalent in effect.
 
 </details>
 
@@ -990,8 +1000,15 @@ in the *analysed* repository for the duration of a run. See
 contributor-scout/
 ├── README.md
 ├── LICENSE                          MIT
+├── CONTRIBUTING.md                  how to contribute; the verification battery
+├── CODE_OF_CONDUCT.md               Contributor Covenant 2.1
+├── SECURITY.md                      private reporting for the tool itself
+├── ROADMAP.md                       north star, principles, five themes
+├── SHOWCASE.md                      verified maintainer outcomes — the scoreboard
+├── MAINTAINERS.md                   who runs the project, and how
+├── CHANGELOG.md
 ├── assets/                          README banner (light + dark SVG)
-├── .claude-plugin/plugin.json       Claude Code plugin manifest
+├── .claude-plugin/                  plugin + marketplace manifests
 ├── AI_Assisted_Open_Source_Contribution_Discovery_Plan.md   design source of truth
 │
 ├── skills/contributor-scout/        ← CANONICAL skill payload (Claude Code)
@@ -1001,9 +1018,12 @@ contributor-scout/
 │   └── scripts/                     5 stdlib-only Python helpers
 ├── agents/                          6 Claude Code subagent definitions
 │
-├── .github/                         GitHub Copilot equivalents
+├── .github/                         GitHub Copilot equivalents + repo infrastructure
 │   ├── skills/contributor-scout/
-│   └── agents/*.agent.md
+│   ├── agents/*.agent.md
+│   ├── CODEOWNERS                   auto-requests maintainer review on PRs
+│   ├── ISSUE_TEMPLATE/              bug · run-failure · outcome · feature forms
+│   └── workflows/ci.yml             the verification battery, on every PR
 ├── .cursor/                         Cursor equivalents
 │   ├── skills/contributor-scout/
 │   └── agents/*.md
@@ -1030,69 +1050,27 @@ is the detailed design source and is kept unchanged.
 
 ## Contributing
 
-Improvements to Contributor Scout itself are welcome. The most valuable ones
-come from running it and recording what went wrong.
+Improvements to Contributor Scout itself are welcome — the full guide is
+**[CONTRIBUTING.md](CONTRIBUTING.md)**. The short version: the most valuable
+contribution is not code, it is a record of a real run that went wrong.
 
-**High-value contributions**
+- **[Report a run failure](https://github.com/Phantom-IN/contributor-scout/issues/new?template=20-run-failure-report.yml)** —
+  a false positive that survived adversarial validation, or a duplicate the
+  two-pass search missed, is worth more than a new feature.
+- **[Report a maintainer outcome](https://github.com/Phantom-IN/contributor-scout/issues/new?template=30-outcome-report.yml)** —
+  scouted a candidate, shipped the PR, heard back? That entry goes on the
+  public scoreboard, **[SHOWCASE.md](SHOWCASE.md)**, and recalibrates the
+  scoring rubric. Rejections count double.
+- **Code and playbooks** — language-specific playbooks, script robustness, new
+  hosts. One rule above all: playbooks grow **only from observed failure
+  patterns**, never from speculative complexity. Edit the canonical
+  `skills/contributor-scout/` tree, propagate with
+  `python3 tools/sync_hosts.py --write`, and run the verification battery in
+  [CONTRIBUTING.md](CONTRIBUTING.md#verifying-a-change) — CI runs exactly the
+  same commands.
 
-- **Failure reports from real runs.** A false positive that survived adversarial
-  validation, or a duplicate the two-pass search missed, is worth more than a new
-  feature. Include the repository, the candidate, and what the system should have
-  noticed.
-- **Language-specific playbooks.** The current security and performance
-  playbooks are ecosystem-neutral and therefore miss language-specific classes.
-- **Rating-anchor calibration** based on observed maintainer outcomes.
-- **Script robustness** — new manifest formats, build systems, and CI platforms
-  in `collect_repo_metadata.py`.
-- **New hosts.** The four-tree layout is designed to extend; see
-  [docs/architecture.md](docs/architecture.md#host-packaging).
-
-**Ground rules**
-
-- Edit `skills/contributor-scout/` — it is canonical — then propagate:
-
-  ```bash
-  python3 tools/sync_hosts.py --write   # references/, templates/, scripts/
-  python3 tools/sync_hosts.py           # verify; exit 1 means drift remains
-  ```
-
-  `SKILL.md` and agent frontmatter are host-specific by design, so the tool
-  reports those and leaves the merge to you.
-- Update playbooks **only from observed failure patterns**, never from
-  speculative complexity. The fastest way to ruin this system is to grow the
-  playbooks faster than the evidence justifies.
-- Keep `SKILL.md` short. Detail belongs in `references/`, loaded on demand.
-- Scripts stay standard-library-only. A dependency is a permanent tax on every
-  user.
-- Any change to the mandatory section list must update
-  `validate_report_schema.py`, `templates/candidate-finding.md`, and
-  `docs/output-format.md` together.
-
-**Before submitting**
-
-```bash
-# 1. everything compiles
-for f in skills/contributor-scout/scripts/*.py hooks/*.py tools/*.py; do
-  python3 -m py_compile "$f" || echo "FAILED: $f"
-done
-
-# 2. the four host trees agree
-python3 tools/sync_hosts.py
-
-# 3. the worked examples still validate and score
-python3 skills/contributor-scout/scripts/validate_report_schema.py \
-  --candidate examples/sample-candidate.md --strict
-python3 skills/contributor-scout/scripts/calculate_candidate_score.py --example \
-  | python3 skills/contributor-scout/scripts/calculate_candidate_score.py --input -
-
-# 4. the hook still denies what it should, in every host dialect
-echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m x"},"cwd":"'"$PWD"'"}' \
-  | python3 hooks/discovery_guard.py
-echo '{"hook_event_name":"beforeShellExecution","command":"git push","cwd":"'"$PWD"'"}' \
-  | python3 hooks/discovery_guard.py
-echo '{"toolCall":{"name":"run_command","args":{"CommandLine":"git push","Cwd":"'"$PWD"'"}}}' \
-  | python3 hooks/discovery_guard.py
-```
+The project ships a [Code of Conduct](CODE_OF_CONDUCT.md); security issues in
+the tool itself go through [SECURITY.md](SECURITY.md), privately.
 
 ---
 
@@ -1100,14 +1078,30 @@ echo '{"toolCall":{"name":"run_command","args":{"CommandLine":"git push","Cwd":"
 
 | Version | Theme | Status |
 |---|---|---|
-| **V1** | Core orchestrator, review playbooks, GitHub and Git integration, templates, deterministic scoring and validation, read-only safety model | **Shipped** |
-| **V1.1** | Cursor and Antigravity support, one hook for four hosts, host-tree drift check | **This release** |
+| **V1** | Core orchestrator, review playbooks, GitHub and Git integration, templates, deterministic scoring and validation, read-only safety model | Shipped |
+| **V1.1** | Cursor and Antigravity support, one hook for four hosts, host-tree drift check | Shipped |
+| **V1.2** | Open-source launch: plugin-marketplace install, CI, community guidelines, public outcome registry | **This release** |
 | **V2** | Independent adversarial validator, candidate-specific query generation, stale-candidate detection, persistent rejected-findings store, schema-versioned reports | Planned |
 | **V3** | Language-specific playbooks, optional Semgrep/CodeQL/profiler integrations, framework heuristics, historical calibration | Planned |
-| **V4** | Distributable plugin, published JSON Schemas, evaluation dataset linking proposals to maintainer outcomes, non-GitHub repository hosts | Planned |
+| **V4** | Published JSON Schemas, evaluation dataset linking proposals to maintainer outcomes, non-GitHub repository hosts | Planned |
 
-Detail, success metrics, and the pilot plan:
-[docs/implementation-roadmap.md](docs/implementation-roadmap.md).
+The direction — north star, constitutional principles, and the five themes
+(including **proof and reputation**: the registry of what maintainers actually
+accepted, and **token efficiency**: what each mode should cost) — lives in
+**[ROADMAP.md](ROADMAP.md)**. Delivery detail, success metrics, and the pilot
+plan: [docs/implementation-roadmap.md](docs/implementation-roadmap.md). The
+scoreboard itself: [SHOWCASE.md](SHOWCASE.md).
+
+---
+
+## Maintainers
+
+| | | |
+|---|---|---|
+| [Vaibhav Vanage](https://github.com/Phantom-IN) — project lead | [Arav Saxena](https://github.com/arav7781) | [Faheem](https://github.com/Faheem219) |
+
+How the team works, how decisions are made, and how maintainers are added:
+[MAINTAINERS.md](MAINTAINERS.md).
 
 ---
 

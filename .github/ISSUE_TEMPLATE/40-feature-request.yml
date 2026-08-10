@@ -1,0 +1,61 @@
+name: Feature request
+description: Propose a change to the skill, playbooks, scripts, hook, or a new host. Comes with the project's own medicine — demand evidence required.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Contributor Scout only proposes features to other projects when it can cite demand, and it
+        applies the same rule to itself. Playbook and prompt changes in particular are only accepted
+        when motivated by **observed failures**, not by plausible-sounding additions — see
+        [the ground rule](https://github.com/Phantom-IN/contributor-scout/blob/main/CONTRIBUTING.md#ground-rule-playbooks-grow-from-failures-not-ideas).
+
+        Check [ROADMAP.md](https://github.com/Phantom-IN/contributor-scout/blob/main/ROADMAP.md) first: the *principles* section lists things that will
+        not change (auto-PR creation, code writing, bulk scanning, runtime dependencies), and your
+        idea may already be on a theme.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Playbooks / references (needs failure evidence)
+        - Scoring rubric / gates (needs outcome evidence)
+        - Helper scripts
+        - discovery-guard hook / safety model
+        - New host support
+        - Report format / templates / schemas
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem, as observed
+      description: What actually happened in a real run (or real workflow) that this would fix? Link run-failure reports, outcome reports, or discussions where they exist.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: The smallest version that solves the observed problem. What is explicitly out of scope?
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: What it costs
+      description: Every addition makes runs longer or the payload bigger for every user on every host. Why is this worth it — and does anything get removed or simplified to pay for it?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I checked ROADMAP.md and this does not conflict with the constitutional principles.
+          required: true
+        - label: I searched existing issues and discussions for prior proposals of this.
+          required: true
