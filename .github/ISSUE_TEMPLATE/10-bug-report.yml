@@ -1,0 +1,71 @@
+name: Bug report
+description: Something in the tooling broke — a script error, the hook misfiring, the skill not loading, a sync problem.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for **mechanical** problems. If the tooling worked but the *analysis* was wrong
+        (false positive, missed duplicate, bad rejection), use the **Run-failure report** form instead —
+        those are triaged as calibration data, not bugs.
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options:
+        - Claude Code
+        - GitHub Copilot (VS Code)
+        - Cursor
+        - Antigravity
+        - Not host-specific (script / repo tooling)
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Skill loading / activation
+        - A helper script (scripts/*.py)
+        - discovery_guard.py hook
+        - tools/sync_hosts.py
+        - Report validation or scoring
+        - Templates / documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the exact command or prompt, and the full error output or wrong behaviour.
+      placeholder: |
+        Ran: python3 skills/contributor-scout/scripts/collect_repo_metadata.py ...
+        Got: Traceback ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, host version, and (if relevant) `gh --version` / auth status.
+      placeholder: |
+        macOS 15.5 · Python 3.12.4 · Claude Code 2.x · gh 2.62 (authenticated)
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I reproduced this on the latest `main`.
+          required: true
+        - label: This is not a security issue (those go through [SECURITY.md](https://github.com/Phantom-IN/contributor-scout/blob/main/SECURITY.md), privately).
+          required: true

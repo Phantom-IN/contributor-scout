@@ -1,0 +1,17 @@
+# Review routing for the maintainer team - see MAINTAINERS.md (the canonical
+# record of who maintains this project).
+#
+# Every pull request automatically requests review from the team. To make
+# these reviews *required*, enable "Require review from Code Owners" in the
+# branch-protection rule for main.
+*   @Phantom-IN @arav7781 @Faheem219
+
+# As area ownership settles (MAINTAINERS.md), narrow it per path, e.g.:
+# /skills/contributor-scout/references/   @<playbook-owner>
+# /hooks/                                 @<safety-owner>
+# /skills/contributor-scout/scripts/      @<tooling-owner>
+
+# Safety-critical surfaces always include the project lead.
+/hooks/                     @Phantom-IN @arav7781 @Faheem219
+/SECURITY.md                @Phantom-IN
+/.claude-plugin/            @Phantom-IN
