@@ -11,13 +11,19 @@ permissions:
 jobs:
   verify:
     name: Verify (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         # Oldest supported and a current version — the scripts are
         # standard-library-only, so this is compatibility, not deps.
-        python-version: ["3.8", "3.12"]
+        # setup-python publishes no 3.8 build for Ubuntu 26.04
+        # (ubuntu-latest), so the oldest version runs on 24.04.
+        include:
+          - python-version: "3.8"
+            os: ubuntu-24.04
+          - python-version: "3.12"
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
