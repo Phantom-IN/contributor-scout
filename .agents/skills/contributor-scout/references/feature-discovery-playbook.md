@@ -46,11 +46,25 @@ Also read, in the repository:
   web UI via `WebFetch`);
 - issue templates - they reveal what maintainers consider in-scope reporting.
 
+**Deferred follow-ups** are the strongest demand signal a contributor can find
+and the easiest to miss. When a maintainer writes "follow-up (separate PR): the
+dashboard card and the price inputs" and nobody ships it, the work is already
+requested, scoped, and aligned. Run
+
+```bash
+python3 scripts/search_github_candidates.py --repo . --followups \
+    --output contribution-discovery/evidence/followup-searches.json
+```
+
+and read `followup_matches` (maintainer-authored first). For each lead, confirm
+the deferred work is still absent from the code and from open PRs before
+treating it as Tier 1.
+
 Rank demand honestly:
 
 | Strength | Signal |
 |---|---|
-| Strong | Maintainer says they want it; roadmap item; issue labelled `help wanted` with maintainer comment |
+| Strong | Maintainer says they want it; roadmap item; issue labelled `help wanted` with maintainer comment; work a maintainer deferred to a follow-up PR that never shipped |
 | Moderate | Multiple independent users request it over time; high reaction counts; recurring support questions |
 | Weak | One user asked once; a stale issue with no maintainer engagement |
 | None | You thought of it |

@@ -49,6 +49,17 @@ Anything here is occupied ground - avoid proposing into it.
 |---|---|---|---|
 | #<n> | <title> | `help wanted` / `good first issue` | <maintainer comment> `[MAINTAINER]` |
 
+## Deferred follow-ups
+
+Work a maintainer explicitly deferred ("follow-up in a separate PR", "out of
+scope for this PR") and that has not shipped since. From
+`search_github_candidates.py --followups` (`followup_matches`); confirm each one
+is still open ground before listing it.
+
+| Ref | Author (association) | Deferred work, quoted | Still unshipped? |
+|---|---|---|---|
+| #<n> | @<login> (OWNER) | "<quote>" `[MAINTAINER]` | yes - <how checked> |
+
 ## Recently merged work
 
 Recent merges tell you what is already fixed and what direction the project is

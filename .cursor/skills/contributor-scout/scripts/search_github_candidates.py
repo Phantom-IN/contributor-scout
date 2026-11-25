@@ -32,6 +32,17 @@ Usage
     # Infer the slug from the local clone's origin remote:
     python3 search_github_candidates.py --repo . --query "startup performance"
 
+    # Also look for follow-up work maintainers promised and never shipped:
+    python3 search_github_candidates.py --repo . --followups \\
+        --output contribution-discovery/evidence/followup-searches.json
+
+Rate limits
+-----------
+GitHub's search API allows about 30 requests a minute. A query that hits the
+limit is retried with backoff (10 s, 20 s, 40 s, capped by
+--max-rate-limit-wait) instead of being recorded as failed, so a burst of
+variants does not quietly lower duplicate-detection confidence.
+
 Exit codes
 ----------
     0  searches completed (possibly in degraded mode)
@@ -46,14 +57,35 @@ import os
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 
-ISSUE_FIELDS = "number,title,state,url,createdAt,updatedAt,labels,repository"
-PR_FIELDS = "number,title,state,url,createdAt,updatedAt,labels,isDraft,repository"
+ISSUE_FIELDS = ("number,title,state,url,createdAt,updatedAt,labels,repository,"
+                "author,authorAssociation")
+PR_FIELDS = ("number,title,state,url,createdAt,updatedAt,labels,isDraft,repository,"
+             "author,authorAssociation")
+
+# Phrases maintainers use when they defer work to a later change. A match by an
+# OWNER/MEMBER/COLLABORATOR is a contribution the maintainer already asked for.
+FOLLOWUP_QUERIES = [
+    '"follow-up" "separate PR"',
+    '"follow up" "separate PR"',
+    '"in a follow-up"',
+    '"left for a follow-up"',
+    '"out of scope for this PR"',
+    '"in a later PR"',
+    '"not part of this PR"',
+    '"future PR"',
+]
+MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
+
+RATE_LIMIT_RE = re.compile(r"rate limit|HTTP 403|HTTP 429|abuse detection",
+                           re.IGNORECASE)
+BACKOFF_SECONDS = [10, 20, 40]
 
 
 def have(binary: str) -> bool:
@@ -109,7 +141,8 @@ def derive_slug_from_clone(repo: Path) -> Optional[str]:
 
 
 def search(kind: str, slug: str, query: str, state: str,
-           limit: int) -> Dict[str, Any]:
+           limit: int, max_wait: int = 120,
+           purpose: str = "duplicate") -> Dict[str, Any]:
     """Run one `gh search issues|prs` query. Hard-coded read-only subcommand."""
     assert kind in ("issues", "prs"), "kind must be 'issues' or 'prs'"
 
@@ -121,13 +154,26 @@ def search(kind: str, slug: str, query: str, state: str,
 
     started = datetime.now(timezone.utc).isoformat()
     code, out, err = run(cmd, timeout=90)
+    attempts, waited = 1, 0
+    for delay in BACKOFF_SECONDS:
+        if code == 0 or not RATE_LIMIT_RE.search(err or out):
+            break
+        if waited + delay > max_wait:
+            break
+        time.sleep(delay)
+        waited += delay
+        attempts += 1
+        code, out, err = run(cmd, timeout=90)
 
     record: Dict[str, Any] = {
         "kind": kind,
         "query": query,
         "state": state,
+        "purpose": purpose,
         "command": " ".join(cmd),
         "executed_at": started,
+        "attempts": attempts,
+        "rate_limit_wait_seconds": waited,
     }
     if code != 0:
         record["ok"] = False
@@ -166,6 +212,9 @@ def normalise(item: Dict[str, Any], kind: str) -> Dict[str, Any]:
         "updated_at": item.get("updatedAt"),
         "labels": label_names,
     }
+    author = item.get("author") or {}
+    normalised["author"] = author.get("login") if isinstance(author, dict) else None
+    normalised["author_association"] = item.get("authorAssociation")
     if kind == "prs":
         normalised["is_draft"] = item.get("isDraft")
     return normalised
@@ -220,6 +269,7 @@ def assess_confidence(records: List[Dict[str, Any]], auth: Dict[str, Any],
                      "UNKNOWN, never CLEAR.")
         return "LOW", notes
 
+    records = [r for r in records if r.get("purpose", "duplicate") == "duplicate"]
     successful = [r for r in records if r.get("ok")]
     failed = [r for r in records if not r.get("ok")]
     distinct_queries = len({r["query"] for r in successful})
@@ -228,6 +278,10 @@ def assess_confidence(records: List[Dict[str, Any]], auth: Dict[str, Any],
     if failed:
         notes.append("{0} of {1} queries failed - see the 'error' field on each."
                      .format(len(failed), len(records)))
+        if any(RATE_LIMIT_RE.search(r.get("error") or "") for r in failed):
+            notes.append("Some queries still hit the GitHub search rate limit "
+                         "after backoff - re-run them a minute later rather "
+                         "than accepting the lower confidence.")
 
     if distinct_queries >= 8 and {"issues", "prs"} <= kinds and not failed:
         confidence = "HIGH"
@@ -256,16 +310,31 @@ def build_document(slug: str, records: List[Dict[str, Any]], auth: Dict[str, Any
     )
     confidence, notes = assess_confidence(records, auth, discussions_checked)
 
+    duplicate_records = [r for r in records if r.get("purpose") == "duplicate"]
+    followup_records = [r for r in records if r.get("purpose") == "followup"]
     hits = [
         {"query": r["query"], "kind": r["kind"], "state": r["state"],
          "match": item}
-        for r in records if r.get("ok")
+        for r in duplicate_records if r.get("ok")
         for item in r.get("results", [])
     ]
+    # Deferred work, maintainer-authored first: these are feature/bug leads, not
+    # duplicate evidence, so they never feed the confidence calculation.
+    followups: Dict[str, Dict[str, Any]] = {}
+    for r in followup_records:
+        for item in r.get("results", []) if r.get("ok") else []:
+            key = item.get("url") or "{0}#{1}".format(item.get("type"), item.get("number"))
+            entry = followups.setdefault(key, dict(item, matched_queries=[]))
+            entry["matched_queries"].append(r["query"])
+    followup_matches = sorted(
+        followups.values(),
+        key=lambda m: (m.get("author_association") not in MAINTAINER_ASSOCIATIONS,
+                       m.get("state") != "OPEN" and m.get("state") != "open",
+                       -(m.get("number") or 0)))
 
     return {
         "schema": "contributor-scout/github-searches",
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "script_version": SCRIPT_VERSION,
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "repository": slug,
@@ -274,12 +343,14 @@ def build_document(slug: str, records: List[Dict[str, Any]], auth: Dict[str, Any
         "security_advisories": advisories,
         "queries_requested": queries,
         "states_searched": states,
-        "query_count": len(records),
-        "queries_with_results": len([r for r in records if r.get("result_count")]),
+        "query_count": len(duplicate_records),
+        "queries_with_results": len(
+            [r for r in duplicate_records if r.get("result_count")]),
         "queries_with_zero_results": len(
-            [r for r in records if r.get("ok") and not r.get("result_count")]),
+            [r for r in duplicate_records if r.get("ok") and not r.get("result_count")]),
         "searches": records,
         "all_matches": hits,
+        "followup_matches": followup_matches,
         "duplicate_detection_confidence": confidence,
         "confidence_notes": notes,
         "guidance": [
@@ -289,6 +360,9 @@ def build_document(slug: str, records: List[Dict[str, Any]], auth: Dict[str, Any
             "Zero-result queries are evidence - keep them in the record.",
             "Discussions are not covered by `gh search`; check them separately "
             "where enabled.",
+            "followup_matches are leads, not findings: open each one and confirm "
+            "the deferred work is still unshipped before turning it into a "
+            "candidate. Maintainer-authored entries are listed first.",
         ],
     }
 
@@ -322,6 +396,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
                         help="Skip pull-request search")
     parser.add_argument("--advisories", action="store_true",
                         help="Also fetch published security advisories")
+    parser.add_argument("--followups", action="store_true",
+                        help="Also search for work maintainers deferred to a "
+                             "follow-up PR (reported under followup_matches)")
+    parser.add_argument("--max-rate-limit-wait", type=int, default=120,
+                        help="Seconds one query may spend backing off from the "
+                             "search rate limit (default: 120; 0 disables retry)")
     parser.add_argument("--limit", type=int, default=25,
                         help="Results per query (default: 25, max 100)")
     parser.add_argument("--output", help="Write JSON here (default: stdout)")
@@ -347,9 +427,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     seen = set()
     queries = [q for q in queries if not (q in seen or seen.add(q))]
 
-    if not queries:
-        print("error: at least one --query or a --queries-file is required",
-              file=sys.stderr)
+    if not queries and not args.followups:
+        print("error: at least one --query, a --queries-file, or --followups "
+              "is required", file=sys.stderr)
         return 1
     if not 1 <= args.limit <= 100:
         print("error: --limit must be between 1 and 100", file=sys.stderr)
@@ -387,11 +467,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if auth.get("authenticated"):
         repo_facts = fetch_repo_facts(slug)
+        wait = max(0, args.max_rate_limit_wait)
         for query in queries:
             if search_issues:
-                records.append(search("issues", slug, query, args.state, args.limit))
+                records.append(search("issues", slug, query, args.state, args.limit, wait))
             if search_prs:
-                records.append(search("prs", slug, query, args.state, args.limit))
+                records.append(search("prs", slug, query, args.state, args.limit, wait))
+        if args.followups:
+            for query in FOLLOWUP_QUERIES:
+                records.append(search("issues", slug, query, "all", args.limit, wait,
+                                      purpose="followup"))
+                records.append(search("prs", slug, query, "all", args.limit, wait,
+                                      purpose="followup"))
         if args.advisories:
             advisories = fetch_advisories(slug)
     else:
@@ -409,9 +496,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         output_path = Path(args.output).expanduser()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(payload + "\n", encoding="utf-8")
-        print("wrote {0} ({1} queries, confidence {2})".format(
+        print("wrote {0} ({1} queries, confidence {2}, {3} follow-up leads)".format(
             output_path, document["query_count"],
-            document["duplicate_detection_confidence"]))
+            document["duplicate_detection_confidence"],
+            len(document["followup_matches"])))
     else:
         print(payload)
     return 0

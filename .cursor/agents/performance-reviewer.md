@@ -39,7 +39,11 @@ inefficiency in code that runs twice a year.
 3. **Quantify the scaling.** State complexity in terms of what the user
    controls, the invocation frequency, and the aggregate effect with the
    arithmetic shown. Label measured numbers `[TEST]` and estimates
-   `[INFERENCE]` - never blur the two.
+   `[INFERENCE]` - never blur the two. A measurement taken outside the
+   project's runtime (its schema copied into another language's driver, a
+   scratch-script re-implementation) is `[PROXY-TEST]`: useful for triage, but
+   repeat it with the project's own toolchain before the candidate can be
+   shortlisted.
 4. **Design the benchmark**: scenario, baseline command, measurements
    (median plus p95 or throughput), comparison, a success criterion justified by
    the project's context, and a correctness guard. Prefer the project's existing

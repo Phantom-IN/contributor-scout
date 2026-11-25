@@ -244,6 +244,16 @@ Route `compile_schema()` through `cache/lifecycle.py` at
 `fluxconf/validation/validator.py:52`, add the cache key, and add two tests.
 Expected diff: 3 files, roughly 60 lines including tests.
 
+## Regression probes
+
+| Input or state | Behaviour today | Must stay / must become |
+|---|---|---|
+| Same schema validated twice in one process | Compiled twice `[CODE]` `fluxconf/validation/validator.py:52` | Compiled once; identical results and errors |
+| Schema object mutated between calls (`fluxconf edit`) | Re-compiled, sees the edit `[TEST]` `pytest tests/test_edit.py -k mutate` | Must still see the edit - content hash changes, so the cache misses |
+| Two distinct schemas with the same `$id` | Validated independently `[CODE]` `fluxconf/validation/validator.py:40-58` | Must not share a compiled tree - key includes the content hash |
+| `$ref` to a remote schema that changes | Re-resolved through `cache/lifecycle.py` `[CODE]` | Unchanged - the compiled tree must not pin a stale `$ref` |
+| Invalid schema | Raises `SchemaError` on every call `[TEST]` | Must keep raising on every call; a failed compile is never cached |
+
 ## Optional follow-ups
 
 - Extend the benchmark suite to cover the multi-schema case.

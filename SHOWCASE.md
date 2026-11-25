@@ -21,7 +21,30 @@ the unflattering breakdown — will be published in the README, per
 
 ## Merged and accepted
 
-*No verified entries yet — the registry opens with this release. Be the first.*
+| Date | Target repository | Contribution | Category | Mode | Outcome | Contributor |
+|---|---|---|---|---|---|---|
+| 2026-11-23 | BaaRai/ARTEX | [PR #517](https://github.com/BaaRai/ARTEX/pull/517) — check for Docker buildx before building the image (FEAT-001) | FEAT | full | Merged, no changes requested | [@Phantom-IN](https://github.com/Phantom-IN) |
+| 2026-11-23 | BaaRai/ARTEX | [PR #481](https://github.com/BaaRai/ARTEX/pull/481) — seed a goal URL that is followed by punctuation (BUG-001) | BUG | full | Merged after one review round | [@Phantom-IN](https://github.com/Phantom-IN) |
+
+**What the review of #481 taught us.** The maintainer's review was a table of
+probe inputs, base vs head. One of them, `http://[::1]`, regressed: trimming
+trailing punctuation also stripped the closing bracket of an IPv6 host. The fix
+went in the same day, but the dossier should have listed that input. That is
+why candidate files now carry a mandatory "Regression probes" section. BUG-001
+was also a plain bug the scorer had no category for; `correctness` exists now
+for the same reason.
+
+### In review
+
+Not counted in any acceptance rate until the maintainers decide. These came
+from the `performance-reviewer` and `feature-scout` subagents run on their own,
+outside a full skill run.
+
+| Opened | Target repository | Contribution | Category | Source |
+|---|---|---|---|---|
+| 2026-11-25 | BaaRai/ARTEX | [PR #540](https://github.com/BaaRai/ARTEX/pull/540) — index exchanges on (host, ts) | PERF | `performance-reviewer` |
+| 2026-11-25 | BaaRai/ARTEX | [PR #541](https://github.com/BaaRai/ARTEX/pull/541) — set LLM profile prices in the settings dialog | FEAT | `feature-scout` (an unshipped maintainer follow-up from issue #70) |
+| 2026-11-25 | BaaRai/ARTEX | [Issue #542](https://github.com/BaaRai/ARTEX/issues/542) + [PR #543](https://github.com/BaaRai/ARTEX/pull/543) — write the full-text index off the request path | PERF | `performance-reviewer` (issue first, with the trade-off laid out) |
 
 <!-- Entry format (keep the table sortable by date, newest first):
 | Date | Target repository | Contribution | Category | Mode | Outcome | Contributor |

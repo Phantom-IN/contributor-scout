@@ -116,6 +116,15 @@ need maintainer buy-in.
 
 Record the plan in `evidence/benchmark-plan.md`. If you ran a measurement,
 record the command and output in `evidence/commands-run.md` and tag `[TEST]`.
+
+**Measure in the project's runtime.** A quick stand-in (the schema copied into
+Python's `sqlite3`, a hot loop re-written in a scratch script) is fine for
+deciding whether a path is worth more time, but tag it `[PROXY-TEST]` and say
+what differs. Before shortlisting, repeat the measurement with the project's own
+toolchain - for example a `go test -bench` file that calls the real function, or
+a `pytest-benchmark` case against the real module - and tag that `[TEST]`. The
+two can disagree in both directions: a different SQLite build plans queries
+differently; a different interpreter allocates differently.
 Measurements taken on a laptop are noisy - say so, report medians over repeated
 runs, and do not over-claim.
 

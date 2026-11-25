@@ -133,6 +133,15 @@ merit. Capture:
 - commit message format and PR title conventions (read the last 30 commits);
 - whether comments are sparse or dense - match the surrounding code.
 
+`collect_repo_metadata.py` puts the mechanical part of this in `conventions`:
+changelog format (Keep a Changelog, `Unreleased` section, whether entries cite
+PR numbers), commit style (conventional-commit share, common types and scopes,
+sign-offs), the rule-like lines of CONTRIBUTING, the exact `run:` commands CI
+executes, locale directories that every new UI string must be added to, and the
+PR template. Carry these into the "Contribution checklist" of
+`05-final-recommendation.md` so the contributor does not learn them one failed
+CI run at a time.
+
 ---
 
 ## 8. Known limitations and history

@@ -13,10 +13,11 @@ sections 6-13.
 | Mode | Phases | Typical use |
 |---|---|---|
 | `profile` | 0-1 | First contact with a repository. Cheap. Run this before anything else. |
-| `full` | 0-8 | Complete discovery across all three categories. |
+| `full` | 0-8 | Complete discovery across all four categories. |
 | `security` | 0-2, 3a, 4-8 | Security-only review with disclosure handling. |
 | `performance` | 0-2, 3b, 4-8 | Performance-only review with benchmark design. |
 | `features` | 0-2, 3c, 4-8 | Roadmap and demand-backed feature discovery. |
+| `correctness` | 0-2, 3d, 4-8 | Reproduced bugs: approval-gated dogfooding, fresh bug reports, boundary inputs. |
 | `validate <id>` | 4-7 | Adversarial revalidation of one existing dossier. |
 | `refresh` | 2, 5, 7-8 | Re-check remote activity and re-rank before implementing. |
 

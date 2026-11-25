@@ -58,6 +58,7 @@ REQUIRED_SECTIONS: List[str] = [
     "Proposed solution direction",
     "Alternative solutions considered",
     "Minimum PR scope",
+    "Regression probes",
     "Optional follow-ups",
     "Explicit exclusions",
     "Backward compatibility and maintenance cost",
@@ -102,7 +103,7 @@ EXPECTED_MACHINE_READABLE = [
     "final-ranking.json",
 ]
 
-EVIDENCE_TAGS = ["[CODE]", "[TEST]", "[HISTORY]", "[MAINTAINER]",
+EVIDENCE_TAGS = ["[CODE]", "[TEST]", "[PROXY-TEST]", "[HISTORY]", "[MAINTAINER]",
                  "[DOCS]", "[INFERENCE]", "[UNVERIFIED]"]
 
 DUPLICATE_STATUSES = ["CLEAR", "RELATED", "PARTIALLY_COVERED", "CLAIMED",
@@ -225,6 +226,11 @@ def validate_candidate(path: Path, report: Report, strict: bool) -> Dict[str, An
     elif is_shortlisted and not ({"[CODE]", "[TEST]"} & set(tags)):
         report.error(where, "a shortlisted candidate needs at least one [CODE] or "
                             "[TEST] claim; only weaker tags were found")
+    is_perf = "PERF" in path.stem.upper()
+    if is_shortlisted and is_perf and "[PROXY-TEST]" in tags and "[TEST]" not in tags:
+        report.error(where, "a shortlisted performance candidate was measured only "
+                            "outside the project's runtime ([PROXY-TEST]); re-run the "
+                            "measurement with the project's own toolchain and tag it [TEST]")
 
     # Source locations
     locations = SOURCE_LOCATION_RE.findall(text)
@@ -406,7 +412,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
     if args.list_required_sections:
-        print("Mandatory sections for SEC-*/PERF-*/FEAT-* candidate reports:")
+        print("Mandatory sections for SEC-*/PERF-*/FEAT-*/BUG-* candidate reports:")
         for section in REQUIRED_SECTIONS:
             print("  ## {0}".format(section))
         print("\nMandatory sections for REJECTED-* reports:")

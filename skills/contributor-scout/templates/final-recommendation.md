@@ -95,10 +95,32 @@ Complete every item before writing any code.
 - [ ] Confirm the local build, test, and (if relevant) benchmark commands run.
 - [ ] Read `CONTRIBUTING.md` in full and follow its process.
 - [ ] Confirm the CLA/DCO requirement is satisfied.
+- [ ] Run every input in the candidate's "Regression probes" table against the
+      change, and add the ones that are not already covered to the tests.
 - [ ] <candidate-specific prerequisite, e.g. "post the benchmark numbers on
       issue #<n> and wait for a maintainer reply">
 - [ ] Confirm you can explain the problem, root cause, fix, alternatives, and
       risks without referring to this document.
+
+---
+
+## Contribution checklist
+
+House rules the PR must follow, from `conventions` in
+`machine-readable/repository-profile.json` and CONTRIBUTING. Fill every row;
+"none found" is a valid answer.
+
+| Rule | What this repository expects | Source |
+|---|---|---|
+| Changelog | <file, format, section, whether entries cite PR numbers> | `<path>` |
+| Commit message | <e.g. `fix(scope): ...`, share of conventional commits> | `git log` |
+| Sign-off / CLA | <DCO sign-off, CLA bot, or none> | |
+| Tests | <where tests live, the command CI runs> | `<workflow file>` |
+| Lint / format | <exact CI commands> | `<workflow file>` |
+| Translations | <locale files every new UI string must be added to, or none> | `<path>` |
+| PR size / count | <open-PR cap, "one change per PR" rule> | CONTRIBUTING |
+| PR template | <path, or none> | |
+| Contended files | <files the PR touches that other open PRs also touch> | `contributor_queue` |
 
 ---
 

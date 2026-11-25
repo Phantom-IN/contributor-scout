@@ -1,12 +1,12 @@
 <!--
 CANONICAL CANDIDATE TEMPLATE - Contributor Scout
 
-Every candidate file (SEC-nnn.md, PERF-nnn.md, FEAT-nnn.md) MUST contain every
+Every candidate file (SEC-nnn.md, PERF-nnn.md, FEAT-nnn.md, BUG-nnn.md) MUST contain every
 level-2 heading below, spelled exactly as written. `scripts/validate_report_schema.py`
 enforces this list. Category-specific templates (security-finding.md,
 performance-finding.md, feature-proposal.md) add sections; they never remove any.
 
-Tag every material claim: [CODE] [TEST] [HISTORY] [MAINTAINER] [DOCS] [INFERENCE] [UNVERIFIED]
+Tag every material claim: [CODE] [TEST] [PROXY-TEST] [HISTORY] [MAINTAINER] [DOCS] [INFERENCE] [UNVERIFIED]
 Delete these HTML comments when generating a real document.
 -->
 
@@ -14,8 +14,8 @@ Delete these HTML comments when generating a real document.
 
 | Field | Value |
 |---|---|
-| Candidate ID | `<SEC-001 / PERF-001 / FEAT-001>` |
-| Category | `security` / `performance` / `feature` |
+| Candidate ID | `<SEC-001 / PERF-001 / FEAT-001 / BUG-001>` |
+| Category | `security` / `performance` / `feature` / `correctness` |
 | Repository | `<owner/name>` |
 | Analysed at commit | `<short SHA>` on `<branch>` |
 | Generated | `<YYYY-MM-DD>` |
@@ -24,7 +24,7 @@ Delete these HTML comments when generating a real document.
 ## Classification and disposition
 
 - **Disposition:** `SHORTLIST` / `NEEDS_MAINTAINER_INPUT` / `HOLD` / `REJECT` / `PRIVATE_DISCLOSURE`
-- **Category:** <security / performance / feature>
+- **Category:** <security / performance / feature / correctness>
 - **Severity or magnitude:** <band, with one line of reasoning>
 - **Contribution score:** `<nn>/100` - band `<Excellent / Strong / Discuss / Weak / Do not pursue>`
 - **Affected component:** `<module or subsystem>`
@@ -86,6 +86,10 @@ exploit.>
 criterion. Cross-reference `evidence/benchmark-plan.md`.>
 <Feature: demand signals with citations - issue numbers, reaction counts,
 maintainer statements, recurring support questions.>
+<Correctness: the exact input or step that produces the wrong result, the
+observed vs expected output, and where it was seen (a dogfood run, a failing
+command, a user report you reproduced). Record the commands in
+`evidence/commands-run.md`.>
 
 ## Existing mitigations and false-positive analysis
 
@@ -150,6 +154,18 @@ Reference an existing pattern in the repository where one applies.>
 
 <The smallest change that delivers the value. One coherent problem. List the
 files expected to change.>
+
+## Regression probes
+
+<Inputs and states the fix must NOT break, each with today's behaviour, so the
+contributor checks them before review instead of a maintainer finding them.
+Cover: inputs that already work, boundary forms (empty, maximum, Unicode,
+IPv6 or bracketed hosts, trailing punctuation, mixed case), the other callers
+of the changed function, and the upgrade path for existing data.>
+
+| Input or state | Behaviour today | Must stay / must become |
+|---|---|---|
+| <input> | <current result, tagged> | <expected after the change> |
 
 ## Optional follow-ups
 

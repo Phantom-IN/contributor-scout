@@ -47,6 +47,23 @@ first, then reason over the result plus the manual checks below.
 - Search `CONTRIBUTING.md` and recent issues for explicit statements such as
   "we do not accept feature PRs", "scope is frozen", "please open an issue first".
 
+### Contributor queue
+
+A busy repository can merge outside PRs every day and still close yours as
+"superseded" because three people opened the same fix that week. Run
+`collect_repo_metadata.py --remote` and record `contributor_queue`:
+
+- **Open-PR cap.** `conventions.open_pr_cap_per_contributor` reads it from
+  CONTRIBUTING ("at most 7 open pull requests per contributor"). Count the
+  user's own open PRs against it.
+- **Closed-unmerged share** and **closed PRs mentioning "superseded"** - a high
+  number means parallel PRs race, so the same-day duplicate re-check before
+  opening a PR is mandatory, not optional.
+- **Contended files** - paths touched by two or more open PRs. A candidate whose
+  minimum scope touches one starts with a merge conflict and a reviewer who
+  already has a version of it. Prefer candidates that avoid them, and say so in
+  the scorecard when one cannot.
+
 ### Blocking conditions
 
 Check for each of these explicitly; any one of them is a strong signal:

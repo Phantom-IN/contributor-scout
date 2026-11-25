@@ -12,6 +12,7 @@ re-deriving it.
 |---|---|---|
 | `[CODE]` | Directly verified in source. | You read the file in this run and cite `path:line` or `path:start-end`. |
 | `[TEST]` | Reproduced through a test, benchmark, or command. | You ran the command in this run; its invocation and relevant output are recorded in `evidence/commands-run.md`. |
+| `[PROXY-TEST]` | Measured or reproduced, but outside the project's own runtime. | Same as `[TEST]`, plus a note naming what differs: a Python `sqlite3` copy of a Go project's schema, a standalone regex run instead of the real parser, a different driver or version. |
 | `[HISTORY]` | Supported by commit or pull-request history. | You cite a commit SHA (short form acceptable) or a PR number you verified exists. |
 | `[MAINTAINER]` | Supported by a maintainer statement. | You quote the statement and cite where it appears (issue/PR/discussion number, file, or release note). |
 | `[DOCS]` | Supported by project documentation. | You cite the document and section. |
@@ -35,7 +36,14 @@ re-deriving it.
    maintainer (commit history, `CODEOWNERS`, org membership, `MAINTAINERS` file)
    before using this tag; otherwise it is a user statement - tag it `[DOCS]`
    with a note, or `[INFERENCE]`.
-6. **Absence of evidence is a finding.** "No issue found matching X across N
+6. **A stand-in measurement is `[PROXY-TEST]`, not `[TEST]`.** Re-creating the
+   project's schema in another language's database driver, or timing a regex in
+   a scratch script, shows the mechanism but not the size of the effect: the
+   project's driver, planner, or runtime may behave differently. A shortlisted
+   performance candidate needs at least one `[TEST]` measurement taken with the
+   project's own toolchain (its test runner, its benchmark harness, its build);
+   `validate_report_schema.py` enforces this.
+7. **Absence of evidence is a finding.** "No issue found matching X across N
    query variants" is a legitimate, useful `[UNVERIFIED]`-adjacent statement -
    record the queries, not just the conclusion.
 

@@ -66,6 +66,19 @@ See references/repository-assessment.md. Tag every claim.
 | Roadmap | yes/no | `<path>` | |
 | `good first issue` / `help wanted` | `<n>` / `<n>` | - | |
 
+## Contributor queue
+
+From `collect_repo_metadata.py --remote` (`contributor_queue`). Omit the table
+and say so if `--remote` was not run.
+
+| Signal | Value | Notes |
+|---|---|---|
+| Open PRs (drafts) | `<n>` (`<n>`) | |
+| Open-PR cap per contributor | `<n or none stated>` | <source line from CONTRIBUTING> |
+| Recent closed PRs not merged | `<n>` of `<n>` | |
+| Closed PRs mentioning "superseded" | `<n>` | <a high count means parallel PRs race> |
+| Contended files (2+ open PRs) | `<path>` (#<n>, #<n>) | **Avoid unless the candidate needs it** |
+
 ## Development commands
 
 | Purpose | Command | Source | Verified |

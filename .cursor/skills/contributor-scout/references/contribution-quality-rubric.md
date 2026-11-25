@@ -34,6 +34,10 @@ Run through this for each candidate and record the answers:
 - [ ] I checked whether maintainers previously declined this direction.
 - [ ] I can state the impact in one sentence a user would care about.
 - [ ] I can state the minimum PR scope in one sentence.
+- [ ] The candidate lists regression probes, and none of them is broken by the
+      proposed direction.
+- [ ] I checked the minimum scope against the contended files in
+      `contributor_queue` and noted any overlap.
 - [ ] I can name what would make me wrong.
 
 If any answer is "no" or "did not check", the candidate cannot be `SHORTLIST`.

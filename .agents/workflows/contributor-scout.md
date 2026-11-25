@@ -10,7 +10,8 @@ description: >-
 Run the `contributor-scout` skill against the repository open in this workspace.
 
 Usage: `/contributor-scout <mode>` where mode is one of `profile`, `full`,
-`security`, `performance`, `features`, `validate <candidate-id>`, or `refresh`.
+`security`, `performance`, `features`, `correctness`, `validate <candidate-id>`,
+or `refresh`.
 When no mode is given, use `profile`.
 
 ## Steps
@@ -30,11 +31,12 @@ When no mode is given, use `profile`.
    through a gate on your own:
    - repository eligibility (end of Phase 0)
    - cost of full discovery (before Phase 3)
+   - dogfooding the project locally (Phase 3d, before any install or service start)
    - security disclosure routing (Phase 6, security findings only)
 
 5. Delegate the Phase 3 reviewers to their custom subagents with
    `invoke_subagent` - `security-reviewer`, `performance-reviewer`,
-   `feature-scout` - passing the Phase 1 architecture context as input. Keep
+   `feature-scout`, `correctness-reviewer` - passing the Phase 1 architecture context as input. Keep
    them independent; no reviewer sees another's conclusions before Phase 6.
 
 6. Write every document under `contribution-discovery/` and nowhere else. Run

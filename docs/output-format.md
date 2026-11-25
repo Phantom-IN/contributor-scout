@@ -40,7 +40,7 @@ contribution-discovery/
     └── final-ranking.json
 ```
 
-**Candidate IDs** are `SEC-nnn`, `PERF-nnn`, `FEAT-nnn`, `REJECTED-nnn`,
+**Candidate IDs** are `SEC-nnn`, `PERF-nnn`, `FEAT-nnn`, `BUG-nnn`, `REJECTED-nnn`,
 zero-padded to three digits, and **stable across `refresh` runs**. Never
 renumber - a human may have referenced an ID in an issue comment.
 

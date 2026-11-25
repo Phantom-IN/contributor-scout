@@ -9,7 +9,51 @@ gates, or the safety model, not just to code.
 
 ## [Unreleased]
 
+Lessons from the first real run (BaaRai/ARTEX, see SHOWCASE.md). Two changes
+touch the report contract: candidate files need a "Regression probes" section,
+and a shortlisted performance candidate can no longer rest on a stand-in
+measurement alone. Existing dossiers need the new section to validate.
+
+### Added
+
+- **`correctness` category and `BUG-nnn` candidates.** The scorer only knew
+  security, performance, and feature, so a plain bug - the most mergeable kind
+  of contribution - could not be scored. New `correctness` mode (phases 0-2,
+  3d, 4-8), `references/correctness-review-playbook.md`, and a
+  `correctness-reviewer` subagent for all four hosts.
+- **Dogfooding (Phase 3d, approval-gated).** Install the project, do the first
+  run, and push one core workflow through it, after the user approves the
+  exact commands. A new approval gate in SKILL.md section 8 covers it.
+- **Deferred follow-up mining.** `search_github_candidates.py --followups`
+  searches for work maintainers pushed to "a follow-up PR" and lists it under
+  `followup_matches`, maintainer-authored first. Search results now carry the
+  author and their association with the repository.
+- **Contributor-queue facts.** `collect_repo_metadata.py --remote` records open
+  PRs per author, files touched by two or more open PRs (contended files), the
+  closed-unmerged share, and closed PRs that mention "superseded". The open-PR
+  cap is read from CONTRIBUTING.
+- **House conventions.** `collect_repo_metadata.py` now reports changelog
+  format, commit style (conventional-commit share, types, scopes, sign-offs),
+  rule-like CONTRIBUTING lines, the exact `run:` commands CI executes, locale
+  directories, and the PR template. They feed a new "Contribution checklist" in
+  `05-final-recommendation.md`.
+- **Regression probes.** A mandatory candidate section listing inputs the fix
+  must not break, with today's behaviour. The ranker's falsification checklist
+  checks it, and contended files.
+- **`[PROXY-TEST]` evidence tag** for measurements taken outside the project's
+  runtime. A shortlisted `PERF-*` candidate tagged only `[PROXY-TEST]` fails
+  validation until it has a `[TEST]` from the project's own toolchain.
+- **Rate-limit backoff** in `search_github_candidates.py`: a query that hits
+  GitHub's search limit is retried (10 s, 20 s, 40 s, capped by
+  `--max-rate-limit-wait`) instead of being recorded as failed.
+- SHOWCASE.md: the first entries - two merged ARTEX PRs (#481, #517) and three
+  in review.
+
 ### Fixed
+
+- `collect_repo_metadata.py` skipped every directory starting with `.git`,
+  including `.github`, so GitHub Actions workflows never appeared in
+  `ci_files`.
 
 - `tools/sync_hosts.py` no longer counts build artifacts and OS junk
   (`__pycache__/`, `*.pyc`, `.DS_Store`) as host-tree drift, and `--write`

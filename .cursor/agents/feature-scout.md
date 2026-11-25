@@ -30,13 +30,17 @@ Follow `references/feature-discovery-playbook.md`.
    `enhancement` / `help wanted` / `good first issue` labels, discussions,
    documentation limitations, `TODO`/`FIXME` comments, release notes, and
    recurring support questions. Rank each signal strong / moderate / weak / none.
+   Run `scripts/search_github_candidates.py --repo . --followups` and read
+   `followup_matches`: work a maintainer deferred to "a follow-up PR" and never
+   shipped is already requested and scoped. Confirm it is still unshipped.
 2. **Check the graveyard first.** Search closed and not-planned issues and
    closed PRs before developing any proposal. A previously declined direction is
    `REJECTED` unless you can name specifically what has changed. "Time has
    passed" is not a change in assumptions.
 3. **Classify the tier:**
    - Tier 1 - roadmap, help-wanted, accepted proposal, maintainer request,
-     documented limitation → strong candidate after duplicate check.
+     unshipped maintainer follow-up, documented limitation → strong candidate
+     after duplicate check.
    - Tier 2 - repeated workaround, missing compatibility, natural extension →
      validate with maintainers if scope is material.
    - Tier 3 - AI-inferred gap with no project demand → discussion first, high

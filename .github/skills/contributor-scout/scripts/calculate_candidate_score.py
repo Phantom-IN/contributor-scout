@@ -48,7 +48,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 RUBRIC_VERSION = "1.0.0"
 MAX_RATING = 5
 
@@ -93,7 +93,9 @@ VALID_DUPLICATE_STATUS = {
 # Statuses that disqualify a candidate outright.
 BLOCKING_DUPLICATE_STATUS = {"DUPLICATE", "CLAIMED", "REJECTED", "SUPERSEDED"}
 VALID_CONFIDENCE = {"HIGH", "MEDIUM", "LOW"}
-VALID_CATEGORY = {"security", "performance", "feature"}
+# correctness: a bug fix (wrong output, crash, broken install) that is neither a
+# security nor a performance finding. Often the most mergeable class of all.
+VALID_CATEGORY = {"security", "performance", "feature", "correctness"}
 
 EXAMPLE = {
     "candidates": [

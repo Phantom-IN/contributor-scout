@@ -14,13 +14,18 @@ The script is strictly read-only:
     --allow-output-inside-repo is passed for the discovery directory);
   * it never runs build, test, install, or network commands - it only *detects*
     which commands exist;
-  * the only external process it invokes is `git`, with read-only subcommands.
+  * the only external process it invokes is `git`, with read-only subcommands -
+    unless --remote is passed, which adds read-only `gh` list/search calls for
+    the contributor-queue facts (open-PR file overlap, closed-unmerged rate).
 
 Usage
 -----
     python3 collect_repo_metadata.py --repo .
     python3 collect_repo_metadata.py --repo /path/to/clone \\
         --output contribution-discovery/machine-readable/repository-profile.json
+
+    # Also measure how crowded the contributor queue is (read-only gh calls):
+    python3 collect_repo_metadata.py --repo . --remote
 
 Exit codes
 ----------
@@ -40,7 +45,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 
 # Directories never worth walking for language/manifest detection.
 SKIP_DIRS = {
@@ -282,6 +287,12 @@ def derive_owner_repo(remote_url: str) -> Optional[str]:
     return "{0}/{1}".format(m.group(1), m.group(2))
 
 
+def _git_internal(name: str) -> bool:
+    # .git, .git-rewrite and similar are VCS internals; .github and .gitlab hold
+    # CI workflows and policy files and must be walked.
+    return name.startswith(".git") and name not in {".github", ".gitlab"}
+
+
 def walk_repo(repo: Path, max_files: int) -> Dict[str, Any]:
     """Single filesystem walk collecting languages, known files, and size."""
     languages: Dict[str, int] = {}
@@ -292,7 +303,7 @@ def walk_repo(repo: Path, max_files: int) -> Dict[str, Any]:
     truncated = False
 
     for dirpath, dirnames, filenames in os.walk(repo):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".git")]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not _git_internal(d)]
         rel_dir = Path(dirpath).relative_to(repo)
 
         base = rel_dir.name.lower()
@@ -517,23 +528,210 @@ def find_security_policy(repo: Path, walked: Dict[str, Any]) -> Dict[str, Any]:
     return {"present": True, "path": candidates[0], "contacts": unique[:10]}
 
 
+CONVENTIONAL_RE = re.compile(r"^(\w+)(?:\(([^)]+)\))?!?: ")
+CONTRIBUTING_RULE_RE = re.compile(
+    r"changelog|sign-?off|\bDCO\b|\bCLA\b|open (?:pull requests|PRs)|"
+    r"per contributor|one (?:change|concern|fix) per|squash|commit message|"
+    r"conventional commit|tests? (?:are|is) required|add (?:a )?tests?|"
+    r"translation|i18n|locale|lint|format", re.IGNORECASE)
+PR_CAP_RE = re.compile(
+    r"(\d+)\s+open\s+(?:pull requests|PRs)|"
+    r"(?:at most|no more than|up to|limit of)\s+(\d+)\s+(?:open\s+)?(?:pull requests|PRs)",
+    re.IGNORECASE)
+
+
+def detect_conventions(repo: Path, walked: Dict[str, Any]) -> Dict[str, Any]:
+    """The house rules a PR has to follow, read from the tree and history.
+
+    Feeds the contribution checklist in 05-final-recommendation.md so the
+    contributor does not rediscover changelog format, commit style, or the exact
+    CI commands one rejected push at a time.
+    """
+    out: Dict[str, Any] = {}
+
+    changelog = next((name for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md",
+                                         "CHANGELOG", "NEWS.md")
+                      if (repo / name).is_file()), None)
+    if changelog:
+        try:
+            head = (repo / changelog).read_text(encoding="utf-8", errors="replace")[:20000]
+        except OSError:
+            head = ""
+        top = head[:6000]
+        out["changelog"] = {
+            "path": changelog,
+            "keep_a_changelog": bool(re.search(r"keep ?a ?changelog", head, re.IGNORECASE)),
+            "has_unreleased_section": bool(re.search(r"^##\s*\[?unreleased", head,
+                                                     re.IGNORECASE | re.MULTILINE)),
+            "entries_cite_pr_or_issue_numbers": bool(re.search(r"\(#\d+\)|\[#\d+\]|#\d{2,}", top)),
+            "subsections_seen": sorted(set(re.findall(r"^###\s+(\w+)", top, re.MULTILINE)))[:10],
+        }
+    else:
+        out["changelog"] = None
+
+    subjects = run(["git", "log", "-200", "--no-merges", "--pretty=format:%s"], repo) or ""
+    lines = [line for line in subjects.splitlines() if line.strip()]
+    if lines:
+        types: Dict[str, int] = {}
+        scopes: Dict[str, int] = {}
+        conventional = 0
+        for line in lines:
+            m = CONVENTIONAL_RE.match(line)
+            if m:
+                conventional += 1
+                types[m.group(1)] = types.get(m.group(1), 0) + 1
+                if m.group(2):
+                    scopes[m.group(2)] = scopes.get(m.group(2), 0) + 1
+        bodies = run(["git", "log", "-200", "--no-merges", "--pretty=format:%b"], repo) or ""
+        out["commit_style"] = {
+            "sampled": len(lines),
+            "conventional_commit_share": round(conventional / len(lines), 2),
+            "top_types": [t for t, _ in sorted(types.items(), key=lambda kv: -kv[1])[:6]],
+            "top_scopes": [t for t, _ in sorted(scopes.items(), key=lambda kv: -kv[1])[:10]],
+            "signed_off_commits": bodies.count("Signed-off-by:"),
+            "examples": lines[:5],
+        }
+
+    rules: List[str] = []
+    pr_cap: Optional[int] = None
+    policy = walked.get("known_files", {}).get("policy", [])
+    for path in [p for p in policy if Path(p).name.upper().startswith("CONTRIBUTING")][:2]:
+        try:
+            text = (repo / path).read_text(encoding="utf-8", errors="replace")[:60000]
+        except OSError:
+            continue
+        for raw in text.splitlines():
+            line = raw.strip(" -*>\t")
+            if line and CONTRIBUTING_RULE_RE.search(line) and len(rules) < 20:
+                rules.append(line[:240])
+            m = PR_CAP_RE.search(raw)
+            if m and pr_cap is None:
+                pr_cap = int(m.group(1) or m.group(2))
+    out["contributing_rules"] = rules
+    out["open_pr_cap_per_contributor"] = pr_cap
+
+    ci_commands: List[Dict[str, str]] = []
+    for ci in walked.get("ci_files", [])[:10]:
+        try:
+            text = (repo / ci).read_text(encoding="utf-8", errors="replace")[:60000]
+        except OSError:
+            continue
+        for m in re.finditer(r"^\s*(?:-\s*)?run:\s*([|>][-+]?)?\s*(.*)$", text, re.MULTILINE):
+            command = m.group(2).strip()
+            if m.group(1) or not command:
+                block = text[m.end():].splitlines()[1:8]
+                command = "; ".join(b.strip() for b in block if b.strip() and not b.strip().startswith("- "))[:300]
+            if command and len(ci_commands) < 40:
+                ci_commands.append({"file": ci, "command": command[:300]})
+    out["ci_commands"] = ci_commands
+
+    locale_dirs = []
+    for dirpath, dirnames, filenames in os.walk(repo):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not _git_internal(d)]
+        if Path(dirpath).name.lower() in {"locales", "locale", "i18n", "translations", "lang"}:
+            data_files = [f for f in filenames if f.endswith((".json", ".po", ".yml", ".yaml", ".ftl", ".properties"))]
+            if len(data_files) >= 2:
+                locale_dirs.append(str(Path(dirpath).relative_to(repo)).replace(os.sep, "/"))
+        if len(locale_dirs) >= 5:
+            break
+    out["locale_directories"] = locale_dirs
+
+    out["pull_request_template"] = next(
+        (p for p in (".github/PULL_REQUEST_TEMPLATE.md", ".github/pull_request_template.md",
+                     "PULL_REQUEST_TEMPLATE.md", "docs/PULL_REQUEST_TEMPLATE.md")
+         if (repo / p).is_file()), None)
+    return out
+
+
+def collect_queue(repo: Path, slug: Optional[str]) -> Dict[str, Any]:
+    """How crowded the contributor queue is. Read-only `gh` list calls only.
+
+    Contended files (touched by two or more open PRs) are where a new PR is
+    most likely to be closed as superseded; the closed-unmerged share of recent
+    PRs says how often that happens.
+    """
+    if not slug:
+        return {"available": False, "reason": "no GitHub owner/name for origin"}
+    if not have("gh"):
+        return {"available": False, "reason": "gh (GitHub CLI) is not installed"}
+
+    opened = run(["gh", "pr", "list", "--repo", slug, "--state", "open", "--limit", "100",
+                  "--json", "number,author,isDraft,files"], repo, timeout=90)
+    if opened is None:
+        return {"available": False, "reason": "gh pr list failed (auth or network)"}
+    try:
+        prs = json.loads(opened or "[]")
+    except ValueError:
+        return {"available": False, "reason": "unparseable gh output"}
+
+    by_file: Dict[str, List[int]] = {}
+    by_author: Dict[str, int] = {}
+    for pr in prs:
+        login = (pr.get("author") or {}).get("login") or "?"
+        by_author[login] = by_author.get(login, 0) + 1
+        for f in pr.get("files") or []:
+            path = f.get("path")
+            if path:
+                by_file.setdefault(path, []).append(pr.get("number"))
+    contended = sorted(
+        ({"path": p, "open_prs": sorted(n)} for p, n in by_file.items() if len(n) >= 2),
+        key=lambda e: (-len(e["open_prs"]), e["path"]))
+
+    closed = run(["gh", "pr", "list", "--repo", slug, "--state", "closed", "--limit", "100",
+                  "--json", "number,mergedAt"], repo, timeout=90)
+    closed_unmerged = None
+    closed_sample = 0
+    if closed:
+        try:
+            rows = json.loads(closed)
+            closed_sample = len(rows)
+            closed_unmerged = len([r for r in rows if not r.get("mergedAt")])
+        except ValueError:
+            pass
+    superseded = run(["gh", "search", "prs", "superseded", "--repo", slug, "--state", "closed",
+                      "--limit", "100", "--json", "number"], repo, timeout=90)
+    superseded_count = None
+    if superseded:
+        try:
+            superseded_count = len(json.loads(superseded))
+        except ValueError:
+            pass
+
+    return {
+        "available": True,
+        "open_prs": len(prs),
+        "open_drafts": len([p for p in prs if p.get("isDraft")]),
+        "open_prs_by_author": dict(sorted(by_author.items(), key=lambda kv: -kv[1])[:15]),
+        "contended_files": contended[:40],
+        "recent_closed_sample": closed_sample,
+        "recent_closed_unmerged": closed_unmerged,
+        "closed_prs_mentioning_superseded": superseded_count,
+        "note": "Flag any candidate whose minimum PR scope touches a contended file.",
+    }
+
+
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 
-def build_metadata(repo: Path, max_files: int) -> Dict[str, Any]:
+def build_metadata(repo: Path, max_files: int, remote: bool = False) -> Dict[str, Any]:
     walked = walk_repo(repo, max_files)
+    git = collect_git(repo)
     return {
         "schema": "contributor-scout/repository-profile",
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "script_version": SCRIPT_VERSION,
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "repository_root": str(repo),
-        "git": collect_git(repo),
+        "git": git,
         "licence": detect_licence(repo),
         "security_policy": find_security_policy(repo, walked),
         "inventory": walked,
         "likely_commands": detect_commands(repo, walked),
+        "conventions": detect_conventions(repo, walked),
+        "contributor_queue": (collect_queue(repo, git.get("owner_repo")) if remote
+                              else {"available": False,
+                                    "reason": "not collected - pass --remote"}),
         "tooling_available": {
             "git": have("git"),
             "gh": have("gh"),
@@ -559,6 +757,9 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--max-files", type=int, default=200000,
                         help="Cap on files walked (default: 200000)")
     parser.add_argument("--indent", type=int, default=2, help="JSON indent (default: 2)")
+    parser.add_argument("--remote", action="store_true",
+                        help="Also collect contributor-queue facts with read-only "
+                             "gh calls (open-PR file overlap, closed-unmerged rate)")
     parser.add_argument("--allow-output-inside-repo", action="store_true",
                         help="Permit --output inside the repository. Only use this "
                              "for paths under contribution-discovery/.")
@@ -599,7 +800,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("error: " + problem, file=sys.stderr)
             return 1
 
-    metadata = build_metadata(repo.resolve(), args.max_files)
+    metadata = build_metadata(repo.resolve(), args.max_files, args.remote)
     payload = json.dumps(metadata, indent=args.indent, sort_keys=False)
 
     if output_path is not None:

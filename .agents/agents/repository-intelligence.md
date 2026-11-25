@@ -31,8 +31,10 @@ feature reviewers depend on. Your output is **facts**, not opinions.
 Read `references/repository-assessment.md` (Phase 0) and
 `references/repository-comprehension.md` (Phase 1) and follow them.
 
-1. Run `scripts/collect_repo_metadata.py --repo . --output
-   contribution-discovery/machine-readable/repository-profile.json`.
+1. Run `scripts/collect_repo_metadata.py --repo . --remote --output
+   contribution-discovery/machine-readable/repository-profile.json`. Drop
+   `--remote` if `gh` is unavailable and record the contributor queue as
+   unmeasured.
 2. Assess eligibility and emit exactly one decision: `PROCEED`,
    `PROCEED_WITH_LIMITATIONS`, or `DO_NOT_INVEST`. Every limitation must be
    named explicitly.
@@ -42,7 +44,11 @@ Read `references/repository-assessment.md` (Phase 0) and
 4. Capture the engineering environment: build, test, lint, type-check,
    benchmark, and static-analysis commands, with the file each came from.
 5. Capture conventions: naming, error handling, logging, test structure, commit
-   and PR style. A contribution that looks foreign gets rejected on style.
+   and PR style. A contribution that looks foreign gets rejected on style. Start
+   from `conventions` in the metadata (changelog format, commit style, CI
+   commands, locale directories, CONTRIBUTING rules) and confirm by reading.
+   Record the contributor queue: open-PR cap, closed-unmerged share, and the
+   contended files from `contributor_queue`.
 6. Capture known limitations (`TODO`/`FIXME`), roadmap, and historical design
    decisions.
 7. Record the private security disclosure channel, or its absence.

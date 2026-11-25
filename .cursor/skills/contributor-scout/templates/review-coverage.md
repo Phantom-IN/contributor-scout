@@ -7,10 +7,10 @@ Honest coverage reporting. What was NOT reviewed matters as much as what was.
 
 | Field | Value |
 |---|---|
-| Mode | `full` / `security` / `performance` / `features` |
+| Mode | `full` / `security` / `performance` / `features` / `correctness` |
 | Analysed at commit | `<short SHA>` on `<branch>` |
 | Generated | `<YYYY-MM-DD>` |
-| Reviewers run | security / performance / features |
+| Reviewers run | security / performance / features / correctness |
 
 ## Scope
 
@@ -71,6 +71,16 @@ code"; "Windows-specific paths not analysed - no environment available">
 | TODO / FIXME comments | | | |
 | Release notes | | | |
 
+## Correctness coverage
+
+| Source | Examined | Items reviewed | Candidates raised |
+|---|---|---|---|
+| Dogfood run (install, first run, documented workflow) | yes / no (approval declined) / n-a | <steps run> | <n> |
+| Recent open bug reports without a maintainer reply | | | |
+| Error paths and logged failures | | | |
+| Input boundaries of parsers and validators | | | |
+| Install and upgrade scripts | | | |
+
 ## Degraded capabilities
 
 | Capability | Status | Effect on findings |
@@ -89,6 +99,7 @@ code"; "Windows-specific paths not analysed - no environment available">
 | `SEC-001` | security | <title> | |
 | `PERF-001` | performance | <title> | |
 | `FEAT-001` | feature | <title> | |
+| `BUG-001` | correctness | <title> | |
 | `REJECTED-001` | <category> | <title> | REJECT |
 
 ## Confidence in coverage

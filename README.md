@@ -488,10 +488,11 @@ just an argument.
 | Mode | Phases | What it costs you | What you get |
 |---|---|---|---|
 | `profile` | 0–1 | Minutes | Viability decision, architecture map, dev commands |
-| `full` | 0–8 | The expensive one | Everything, across all three categories |
+| `full` | 0–8 | The expensive one | Everything, across all four categories |
 | `security` | 0–2, 3a, 4–8 | Moderate | Attack surface, reachable findings, disclosure routing |
 | `performance` | 0–2, 3b, 4–8 | Moderate | Hot paths, scaling analysis, benchmark plans |
 | `features` | 0–2, 3c, 4–8 | Moderate | Demand-backed proposals with explicit non-goals |
+| `correctness` | 0–2, 3d, 4–8 | Moderate (more if you approve dogfooding) | Reproduced bugs with root cause and regression probes |
 | `validate <id>` | 4–7 | Small | One candidate, re-attacked and re-scored |
 | `refresh` | 2, 5, 7–8 | Small | Updated duplicate status and ranking |
 
@@ -513,7 +514,7 @@ architecture map and the development commands.
 
 ```text
 Use the contributor-scout skill in full mode.
-Analyse security, performance, and feature contribution opportunities.
+Analyse security, performance, correctness, and feature contribution opportunities.
 Generate all reports under contribution-discovery/.
 Do not implement anything.
 ```

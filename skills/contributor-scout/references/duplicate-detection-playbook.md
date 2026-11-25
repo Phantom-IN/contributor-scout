@@ -122,6 +122,12 @@ For each plausible hit, determine:
 | **MEDIUM** | Remote searched but a source was unavailable (e.g. discussions not accessible), or fewer variants were run. |
 | **LOW** | `gh` unavailable or unauthenticated; only local evidence (git log, TODOs) was used. |
 
+**Rate limits are not a confidence downgrade.** GitHub's search API allows about
+30 requests a minute; ten query variants across issues and PRs is twenty
+requests. `search_github_candidates.py` backs off and retries a rate-limited
+query (up to `--max-rate-limit-wait` seconds). If a query still fails, re-run
+it a minute later instead of settling for MEDIUM.
+
 **Two absolute rules:**
 
 1. `CLEAR` requires a successful remote check of both issues *and* pull requests

@@ -2,13 +2,15 @@
 name: contributor-scout
 description: >-
   Discover evidence-backed open-source contribution opportunities in a cloned
-  repository. Analyses security, performance, and feature opportunities; checks
+  repository. Analyses security, performance, correctness, and feature
+  opportunities; checks
   issues, pull requests, discussions, and Git history for duplicates and
   maintainer intent; scores candidates; and writes discovery documents under
   contribution-discovery/. Discovery only - never modifies source code, never
   commits, never opens issues or pull requests. Use when the user asks what to
   contribute to a repository, wants to find a good first contribution, wants a
-  security/performance/feature review aimed at contributing upstream, or asks
+  security/performance/correctness/feature review aimed at contributing
+  upstream, or asks
   whether a repository is worth contributing to.
 ---
 
@@ -31,7 +33,7 @@ Use this skill when the user is standing in (or points at) a **cloned
 third-party open-source repository** and wants to know:
 
 - whether the repository is worth contributing to;
-- what security, performance, or feature contribution to pursue;
+- what security, performance, correctness, or feature contribution to pursue;
 - whether an idea they already have is duplicate, aligned, or historically naive;
 - why the current code is written the way it is, before proposing a change.
 
@@ -70,6 +72,9 @@ You **MAY**:
   `gh pr list/view`, `gh search`, read-only `gh api` GET requests);
 - run the repository's **existing** test suite and **existing** static-analysis,
   lint, and benchmark commands, after checking what they actually do;
+- dogfood the project - install it, run it, push one core workflow through it -
+  **only after the user approves the exact commands** (Phase 3d, see
+  `references/correctness-review-playbook.md`);
 - create discovery documents and machine-readable metadata under the output
   directory;
 - run the bundled scripts in `scripts/`.
@@ -97,10 +102,11 @@ mode is just an argument that selects which phases run.
 | Mode | Phases | Purpose |
 |---|---|---|
 | `profile` | 0-1 | Repository viability and architecture only. Cheap. Run this first. |
-| `full` | 0-8 | Complete discovery across all three categories. |
+| `full` | 0-8 | Complete discovery across all four categories. |
 | `security` | 0-2, 3a, 4-8 | Security-only review with disclosure handling. |
 | `performance` | 0-2, 3b, 4-8 | Performance-only review with benchmark design. |
 | `features` | 0-2, 3c, 4-8 | Roadmap and demand-backed feature discovery. |
+| `correctness` | 0-2, 3d, 4-8 | Reproduced bugs: dogfooding (approval-gated), fresh bug reports, boundary inputs. |
 | `validate <candidate-id>` | 4-7 | Adversarial revalidation of one existing dossier. |
 | `refresh` | 2, 5, 7-8 | Re-check remote activity, duplicate status, and ranking of existing candidates. |
 
@@ -120,10 +126,12 @@ Track phases with a todo list. Do not skip phases. Do not reorder them.
 
 Read `references/repository-assessment.md`.
 
-Run `scripts/collect_repo_metadata.py` and inspect: recent commit and release
-activity, licence, `CONTRIBUTING`, `CODE_OF_CONDUCT`, `SECURITY`, test setup,
-CI, whether external PRs are merged, maintainer response behaviour, roadmap,
-archival status, mirror status, in-flight rewrites, CLA requirements.
+Run `scripts/collect_repo_metadata.py --remote` (without `--remote` when `gh`
+is unavailable) and inspect: recent commit and release activity, licence,
+`CONTRIBUTING`, `CODE_OF_CONDUCT`, `SECURITY`, test setup, CI, whether external
+PRs are merged, maintainer response behaviour, roadmap, archival status, mirror
+status, in-flight rewrites, CLA requirements, and how crowded the contributor
+queue is (open-PR cap, closed-unmerged share, files contended by open PRs).
 
 Emit exactly one decision:
 
@@ -154,7 +162,8 @@ the architecture summary, and tell the user which mode to run next.
 
 Read `references/duplicate-detection-playbook.md`.
 
-Run `scripts/search_github_candidates.py` for the broad sweep. Collect open and
+Run `scripts/search_github_candidates.py --followups` for the broad sweep; the
+`followup_matches` it adds are work maintainers deferred to a later PR. Collect open and
 closed issues, open/draft/merged/closed PRs, discussions, roadmap, changelog,
 release notes, TODO/FIXME comments, security advisories, maintainer comments,
 and repeated user requests.
@@ -174,10 +183,13 @@ conclusions before Phase 6.
 - 3a Security - `references/security-review-playbook.md`
 - 3b Performance - `references/performance-review-playbook.md`
 - 3c Features - `references/feature-discovery-playbook.md`
+- 3d Correctness - `references/correctness-review-playbook.md` (dogfooding
+  needs the approval gate in section 8)
 
 For non-trivial repositories, delegate each reviewer to its custom subagent
 via `invoke_subagent` (`security-reviewer`, `performance-reviewer`,
-`feature-scout`) with the Phase 1
+`feature-scout`,
+`correctness-reviewer`) with the Phase 1
 context as input. Record what was and was not reviewed in `03-review-coverage.md` -
 honest coverage gaps are more useful than implied completeness.
 
@@ -242,7 +254,8 @@ Write `04-candidate-scorecard.md` and `machine-readable/candidates.json`.
 
 Shortlist **at most three** candidates and recommend **one** primary. Include
 selection reasoning, evidence summary, maintainer pitch, implementation
-prerequisites, scope boundaries, risks, and the next action.
+prerequisites, the contribution checklist (the repository's house rules, from
+`conventions`), scope boundaries, risks, and the next action.
 
 Write `05-final-recommendation.md` and `machine-readable/final-ranking.json`.
 
@@ -272,7 +285,8 @@ contribution-discovery/
 ├── 03-review-coverage.md
 ├── 04-candidate-scorecard.md
 ├── 05-final-recommendation.md
-├── candidates/            SEC-001.md, PERF-001.md, FEAT-001.md, REJECTED-001.md
+├── candidates/            SEC-001.md, PERF-001.md, FEAT-001.md, BUG-001.md,
+│                          REJECTED-001.md
 ├── evidence/              commands-run.md, source-locations.json,
 │                          github-searches.json, benchmark-plan.md,
 │                          unresolved-questions.md
@@ -280,8 +294,8 @@ contribution-discovery/
                            final-ranking.json
 ```
 
-Candidate IDs: `SEC-nnn`, `PERF-nnn`, `FEAT-nnn`, `REJECTED-nnn` (zero-padded to
-three digits). IDs are stable across `refresh` runs - never renumber.
+Candidate IDs: `SEC-nnn`, `PERF-nnn`, `FEAT-nnn`, `BUG-nnn`, `REJECTED-nnn`
+(zero-padded to three digits). IDs are stable across `refresh` runs - never renumber.
 
 Use `templates/` for every document. Every shortlisted candidate must contain
 all mandatory sections listed in `templates/candidate-finding.md`;
@@ -299,7 +313,7 @@ Read `references/evidence-classification.md`.
 Every material claim carries a tag:
 
 ```text
-[CODE] [TEST] [HISTORY] [MAINTAINER] [DOCS] [INFERENCE] [UNVERIFIED]
+[CODE] [TEST] [PROXY-TEST] [HISTORY] [MAINTAINER] [DOCS] [INFERENCE] [UNVERIFIED]
 ```
 
 Rules:
@@ -307,6 +321,10 @@ Rules:
 - Source locations are `path/to/file.ext:LINE` or `:START-END`, verified by
   reading the file in this run. Never cite a line number you did not read.
 - `[TEST]` requires a command you actually ran, with its output recorded.
+- A measurement taken outside the project's own runtime (its schema copied into
+  another language's driver, a scratch re-implementation) is `[PROXY-TEST]`. A
+  shortlisted performance candidate needs a `[TEST]` measurement from the
+  project's own toolchain as well.
 - `[MAINTAINER]` requires a quotable statement with a link or reference.
 - Any claim you cannot support is `[INFERENCE]` or `[UNVERIFIED]` - never
   upgrade a guess to a fact to make a candidate look stronger.
@@ -343,6 +361,7 @@ The skill stops at every gate and asks. It never proceeds through one on its own
 |---|---|---|
 | Repository | Active, contribution-friendly, feasible? | End of Phase 0 |
 | Cost | Full discovery is expensive - proceed? | Before Phase 3 |
+| Dogfood | Run the project locally? Show the exact install/run commands first | Phase 3d, before any install, build, or service start |
 | Disclosure | Does this need private disclosure? | Phase 6, security only |
 | Human | Can the engineer explain and defend this? | After Phase 8 |
 | Implementation | Approved to implement? | **Outside this skill** |
@@ -402,6 +421,7 @@ Load these on demand - do not read them all up front.
 | `security-review-playbook.md` | Phase 3a |
 | `performance-review-playbook.md` | Phase 3b |
 | `feature-discovery-playbook.md` | Phase 3c |
+| `correctness-review-playbook.md` | Phase 3d |
 | `git-history-playbook.md` | Phase 4 |
 | `maintainer-alignment-playbook.md` | Phases 3c and 6 |
 | `contribution-quality-rubric.md` | Phases 6 and 7 |
@@ -415,12 +435,12 @@ Load these on demand - do not read them all up front.
 
 | Script | Purpose |
 |---|---|
-| `collect_repo_metadata.py` | Phase 0 repository facts as JSON |
+| `collect_repo_metadata.py` | Phase 0 repository facts, house conventions, and (with `--remote`) contributor-queue crowding |
 | `collect_git_history.py` | Phase 4 blame, log, introducing-commit candidates |
-| `search_github_candidates.py` | Phases 2 and 5 read-only `gh` searches |
+| `search_github_candidates.py` | Phases 2 and 5 read-only `gh` searches, with rate-limit backoff; `--followups` finds deferred maintainer work |
 | `calculate_candidate_score.py` | Phase 7 deterministic scoring |
 | `validate_report_schema.py` | Phase 8 report completeness check |
 
 **Custom subagents** (`.agents/agents/` directory): `repository-intelligence`,
 `security-reviewer`, `performance-reviewer`, `feature-scout`,
-`duplicate-history-validator`, `contribution-ranker`.
+`correctness-reviewer`, `duplicate-history-validator`, `contribution-ranker`.
